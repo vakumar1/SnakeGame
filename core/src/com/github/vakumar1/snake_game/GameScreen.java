@@ -1,0 +1,169 @@
+package com.github.vakumar1.snake_game;
+
+import com.badlogic.gdx.*;
+import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.maps.tiled.TiledMap;
+import com.badlogic.gdx.maps.tiled.TiledMapRenderer;
+import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
+import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile;
+import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
+import com.badlogic.gdx.utils.ScreenUtils;
+import java.util.concurrent.TimeUnit;
+
+
+public class GameScreen extends ApplicationAdapter implements Screen, InputProcessor {
+    public static final TiledMapTileLayer.Cell NOTHING_CELL = new TiledMapTileLayer.Cell().setTile(new StaticTiledMapTile(new TextureRegion(new Texture("blue.gif"))));
+    public static final TiledMapTileLayer.Cell SNAKE_CELL = new TiledMapTileLayer.Cell().setTile(new StaticTiledMapTile(new TextureRegion(new Texture("green.jpg"))));
+    public static final TiledMapTileLayer.Cell FOOD_CELL = new TiledMapTileLayer.Cell().setTile(new StaticTiledMapTile(new TextureRegion(new Texture("orange.jpg"))));
+
+    private SnakeGame game;
+    private OrthographicCamera camera;
+    private TiledMap map;
+    private TiledMapTileLayer mapLayer;
+    private TiledMapRenderer renderer;
+    private GridGenerator generator;
+    private boolean gameOver;
+
+    public GameScreen(final SnakeGame game) {
+        this.game = game;
+        camera = new OrthographicCamera();
+        camera.setToOrtho(false, SnakeGame.SCREEN_WIDTH, SnakeGame.SCREEN_HEIGHT);
+
+        map = new TiledMap();
+        mapLayer = new TiledMapTileLayer(GridGenerator.GRID_WIDTH, GridGenerator.GRID_HEIGHT, SnakeGame.TILE_SIZE, SnakeGame.TILE_SIZE);
+        map.getLayers().add(mapLayer);
+        renderer = new OrthogonalTiledMapRenderer(map);
+        Gdx.input.setInputProcessor(this);
+
+        generator = new GridGenerator();
+        generator.initGrid();
+        for (int x = 0; x < mapLayer.getWidth(); x += 1) {
+            for (int y = 0; y < mapLayer.getHeight(); y += 1) {
+                mapLayer.setCell(x, y, generator.grid[x][y]);
+            }
+        }
+        gameOver = false;
+    }
+
+
+    @Override
+    public void render(float delta) {
+        ScreenUtils.clear(0, 0, 0.2f, 1);
+        camera.update();
+        renderer.setView(camera);
+        renderer.render();
+
+        if (!generator.updateSnake()) {
+            gameOver = true;
+        }
+
+        if (!gameOver) {
+            updateMap();
+        } else {
+            game.batch.begin();
+            String title = "Your score was " + generator.getScore() + ". Press any key to try again.";
+            GlyphLayout titleLayout = new GlyphLayout();
+            titleLayout.setText(game.font, title);
+            game.font.draw(game.batch, titleLayout, (SnakeGame.SCREEN_WIDTH - titleLayout.width) / 2, 150);
+            game.batch.end();
+            if (Gdx.input.isTouched() || Gdx.input.isKeyPressed(Input.Keys.ANY_KEY)) {
+                game.setScreen(new GameScreen(game));
+                dispose();
+            }
+        }
+    }
+
+    @Override
+    public void resize(int width, int height) {
+    }
+
+
+    @Override
+    public void show() {
+    }
+
+    @Override
+    public void hide() {
+    }
+
+    @Override
+    public void pause() {
+    }
+
+    @Override
+    public void resume() {
+    }
+
+
+    @Override
+    public void dispose () {
+    }
+
+    @Override
+    public boolean keyDown(int keycode) {
+        if (gameOver) {
+            return false;
+        }
+        switch (keycode) {
+            case Input.Keys.UP:
+                generator.updateDirection('U');
+                break;
+            case Input.Keys.DOWN:
+                generator.updateDirection('D');
+                break;
+            case Input.Keys.RIGHT:
+                generator.updateDirection('R');
+                break;
+            case Input.Keys.LEFT:
+                generator.updateDirection('L');
+                break;
+            default:
+                break;
+        }
+        return false;
+    }
+    @Override
+    public boolean keyUp(int keycode) {
+        return false;
+    }
+    @Override
+    public boolean keyTyped(char character) {
+        return false;
+    }
+    @Override
+    public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+        return false;
+    }
+    @Override
+    public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+        return false;
+    }
+    @Override
+    public boolean touchDragged(int screenX, int screenY, int pointer) {
+        return false;
+    }
+    @Override
+    public boolean mouseMoved(int screenX, int screenY) {
+        return false;
+    }
+    @Override
+    public boolean scrolled(float amountX, float amountY) {
+        return false;
+    }
+
+    private void updateMap() {
+        for (int x = 0; x < mapLayer.getWidth(); x += 1) {
+            for (int y = 0; y < mapLayer.getHeight(); y += 1) {
+                mapLayer.setCell(x, y, generator.grid[x][y]);
+            }
+        }
+        try {
+            TimeUnit.MILLISECONDS.sleep(50);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+}

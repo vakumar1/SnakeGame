@@ -11,7 +11,9 @@ import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.utils.ScreenUtils;
+
 import java.util.concurrent.TimeUnit;
+import javax.swing.Timer;
 
 
 public class GameScreen extends ApplicationAdapter implements Screen, InputProcessor {
@@ -20,15 +22,19 @@ public class GameScreen extends ApplicationAdapter implements Screen, InputProce
     public static final TiledMapTileLayer.Cell FOOD_CELL = new TiledMapTileLayer.Cell().setTile(new StaticTiledMapTile(new TextureRegion(new Texture("orange.jpg"))));
 
     private SnakeGame game;
+    private boolean play;
     private OrthographicCamera camera;
     private TiledMap map;
     private TiledMapTileLayer mapLayer;
     private TiledMapRenderer renderer;
     private GridGenerator generator;
+    private double lastTime;
+    private char lastDir;
     private boolean gameOver;
 
-    public GameScreen(final SnakeGame game) {
+    public GameScreen(final SnakeGame game, boolean play) {
         this.game = game;
+        this.play = play;
         camera = new OrthographicCamera();
         camera.setToOrtho(false, SnakeGame.SCREEN_WIDTH, SnakeGame.SCREEN_HEIGHT);
 
@@ -46,6 +52,7 @@ public class GameScreen extends ApplicationAdapter implements Screen, InputProce
             }
         }
         gameOver = false;
+        lastTime = 0;
     }
 
 
@@ -62,15 +69,22 @@ public class GameScreen extends ApplicationAdapter implements Screen, InputProce
 
         if (!gameOver) {
             updateMap();
+            if (!play) {
+                updateDirections();
+            }
+            game.batch.begin();
+            GlyphLayout scoreLayout = new GlyphLayout();
+            scoreLayout.setText(game.subtitleFont, "Score: " + generator.getScore());
+            game.subtitleFont.draw(game.batch, scoreLayout, (SnakeGame.SCREEN_WIDTH - scoreLayout.width) / 2, SnakeGame.SCREEN_HEIGHT - 25);
+            game.batch.end();
         } else {
             game.batch.begin();
-            String title = "Your score was " + generator.getScore() + ". Press any key to try again.";
-            GlyphLayout titleLayout = new GlyphLayout();
-            titleLayout.setText(game.font, title);
-            game.font.draw(game.batch, titleLayout, (SnakeGame.SCREEN_WIDTH - titleLayout.width) / 2, 150);
+            GlyphLayout endLayout = new GlyphLayout();
+            endLayout.setText(game.subtitleFont, "Your score was " + generator.getScore() + ". Press any key to return to the Main Menu.");
+            game.subtitleFont.draw(game.batch, endLayout, (SnakeGame.SCREEN_WIDTH - endLayout.width) / 2, SnakeGame.SCREEN_HEIGHT - 25);
             game.batch.end();
             if (Gdx.input.isTouched() || Gdx.input.isKeyPressed(Input.Keys.ANY_KEY)) {
-                game.setScreen(new GameScreen(game));
+                game.setScreen(new MainMenuScreen(game));
                 dispose();
             }
         }
@@ -107,21 +121,23 @@ public class GameScreen extends ApplicationAdapter implements Screen, InputProce
         if (gameOver) {
             return false;
         }
-        switch (keycode) {
-            case Input.Keys.UP:
-                generator.updateDirection('U');
-                break;
-            case Input.Keys.DOWN:
-                generator.updateDirection('D');
-                break;
-            case Input.Keys.RIGHT:
-                generator.updateDirection('R');
-                break;
-            case Input.Keys.LEFT:
-                generator.updateDirection('L');
-                break;
-            default:
-                break;
+        if (play) {
+            switch (keycode) {
+                case Input.Keys.UP:
+                    generator.updateDirection('U');
+                    break;
+                case Input.Keys.DOWN:
+                    generator.updateDirection('D');
+                    break;
+                case Input.Keys.RIGHT:
+                    generator.updateDirection('R');
+                    break;
+                case Input.Keys.LEFT:
+                    generator.updateDirection('L');
+                    break;
+                default:
+                    break;
+            }
         }
         return false;
     }
@@ -164,6 +180,25 @@ public class GameScreen extends ApplicationAdapter implements Screen, InputProce
             TimeUnit.MILLISECONDS.sleep(50);
         } catch (InterruptedException e) {
             e.printStackTrace();
+        }
+    }
+
+    private void updateDirections() {
+        if (System.currentTimeMillis() - lastTime > 250) {
+            if (lastDir == 'U') {
+                generator.updateDirection('R');
+                lastDir = 'R';
+            } else if (lastDir == 'R') {
+                generator.updateDirection('D');
+                lastDir = 'D';
+            } else if (lastDir == 'D') {
+                generator.updateDirection('L');
+                lastDir = 'L';
+            } else {
+                generator.updateDirection('U');
+                lastDir = 'U';
+            }
+            lastTime = System.currentTimeMillis();
         }
     }
 }

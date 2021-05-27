@@ -1,8 +1,12 @@
 package com.github.vakumar1.snake_game;
 
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.*;
+
 
 public class SnakeGame extends Game {
 	public static final int TILE_SIZE = 16;
@@ -10,12 +14,21 @@ public class SnakeGame extends Game {
 	public static final int SCREEN_HEIGHT = GridGenerator.GRID_HEIGHT * TILE_SIZE;
 
 	public SpriteBatch batch;
-	public BitmapFont font;
-	
+	public BitmapFont titleFont;
+	public BitmapFont subtitleFont;
+
 	@Override
 	public void create () {
 		batch = new SpriteBatch();
-		font = new BitmapFont();
+		FreeTypeFontGenerator fontGenerator = new FreeTypeFontGenerator(Gdx.files.internal("android/assets/oswald/Oswald-Regular.ttf"));
+		FreeTypeFontParameter titleParam = new FreeTypeFontParameter();
+		titleParam.size = 30;
+		titleParam.characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.!'()>?:";
+		titleFont = fontGenerator.generateFont(titleParam);
+		FreeTypeFontParameter subtitleParam = new FreeTypeFontParameter();
+		subtitleParam.size = 20;
+		subtitleParam.characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.!'()>?:";
+		subtitleFont = fontGenerator.generateFont(subtitleParam);
 		this.setScreen(new MainMenuScreen(this));
 	}
 
@@ -27,6 +40,5 @@ public class SnakeGame extends Game {
 	@Override
 	public void dispose () {
 		batch.dispose();
-		font.dispose();
 	}
 }

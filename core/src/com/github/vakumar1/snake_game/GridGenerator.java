@@ -2,6 +2,7 @@ package com.github.vakumar1.snake_game;
 
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer.Cell;
 
+import java.awt.*;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -22,44 +23,12 @@ public class GridGenerator {
     };
 
     public Cell[][] grid;
-    private LinkedList<Point> snakeList;
-    private Point food;
+    public LinkedList<Point> snakeList;
+    public Point head;
+    private Point tail;
+    public Point food;
     private char direction;
     private int score;
-
-    public class Point {
-        int x;
-        int y;
-
-        public Point() {
-            this.x = -1;
-            this.y = -1;
-        }
-
-        public Point(int x, int y) {
-            this.x = x;
-            this.y = y;
-        }
-
-        public void setX(int x) {
-            this.x = x;
-        }
-
-        public void setY(int y) {
-            this.y = y;
-        }
-
-        @Override
-        public boolean equals(Object other) {
-            if (this == other) {
-                return true;
-            } else if (other instanceof Point) {
-                Point otherPoint = (Point) other;
-                return this.x == otherPoint.x && this.y == otherPoint.y;
-            }
-            return false;
-        }
-    }
 
     public GridGenerator() {
         grid = new Cell[GRID_WIDTH][GRID_HEIGHT];
@@ -71,7 +40,7 @@ public class GridGenerator {
     }
 
     public void initGrid() {
-        Point head = new Point();
+        head = new Point();
         food = new Point();
         snakeList = new LinkedList<Point>();
         score = 0;
@@ -81,14 +50,15 @@ public class GridGenerator {
         generateNewFood();
 
         snakeList.add(head);
+        tail = head;
 
         grid[head.x][head.y] = GameScreen.SNAKE_CELL;
         grid[food.x][food.y] = GameScreen.FOOD_CELL;
     }
 
-    public int getScore() {
-        return score;
-    }
+    public int getScore() { return score; }
+
+    public char getDirection() { return direction; }
 
     public boolean updateDirection(char newDirection) {
         if (direction == 'U' && newDirection == 'D' ||
@@ -107,35 +77,33 @@ public class GridGenerator {
     }
 
     public boolean updateSnake() {
-        Point head = snakeList.get(0);
-        int nextX = head.x;
-        int nextY = head.y;
+        Point nextHead = new Point(head.x, head.y);
         switch (direction) {
             case 'U':
-                nextY += 1;
+                nextHead.y += 1;
                 break;
             case 'D':
-                nextY -= 1;
+                nextHead.y -= 1;
                 break;
             case 'R':
-                nextX += 1;
+                nextHead.x += 1;
                 break;
             case 'L':
-                nextX -= 1;
+                nextHead.x -= 1;
                 break;
             default:
                 break;
         }
 
-        Point nextHead = new Point(nextX, nextY);
         if (nextHead.equals(head)) {
             return true;
         }
-        if (isValid(nextHead)) {
-            snakeList.addFirst(nextHead);
-            grid[nextHead.x][nextHead.y] = GameScreen.SNAKE_CELL;
-            if (!nextHead.equals(food)) {
-                Point tail = snakeList.removeLast();
+        if (isValid(nextHead.x, nextHead.y)) {
+            head = nextHead;
+            snakeList.addFirst(head);
+            grid[head.x][head.y] = GameScreen.SNAKE_CELL;
+            if (!head.equals(food)) {
+                tail = snakeList.removeLast();
                 grid[tail.x][tail.y] = GameScreen.NOTHING_CELL;
             } else {
                 score += 1;
@@ -146,17 +114,23 @@ public class GridGenerator {
         return false;
     }
 
-    private boolean isValid(Point p) {
-        boolean inBounds = p.x >= 0 && p.x < GRID_WIDTH && p.y >= 0 && p.y < GRID_HEIGHT;
-        boolean isNotSnake = !snakeList.contains(p);
+    public boolean isValid(int x, int y) {
+        boolean inBounds = x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT;
+        boolean isNotSnake = grid[x][y] != GameScreen.SNAKE_CELL;
         return inBounds && isNotSnake;
+    }
+
+    public boolean firstIsCloserToGiven(Point given, Point p1, Point p2) {
+        double dist1 = Math.sqrt(Math.pow((given.x - p1.x), 2) + Math.pow((given.y - p1.y), 2));
+        double dist2 = Math.sqrt(Math.pow((given.x - p2.x), 2) + Math.pow((given.y - p2.y), 2));
+        return dist1 < dist2;
     }
 
     private void generateNewFood() {
         food.x = RANDOM.nextInt(GRID_WIDTH - 2 * BUFFER) + BUFFER;
         food.y = RANDOM.nextInt(GRID_HEIGHT - 2 * BUFFER) + BUFFER;
 
-        if (isValid(food)) {
+        if (isValid(food.x, food.y)) {
             grid[food.x][food.y] = GameScreen.FOOD_CELL;
         } else {
             generateNewFood();

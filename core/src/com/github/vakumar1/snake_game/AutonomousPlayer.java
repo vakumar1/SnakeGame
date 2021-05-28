@@ -1,6 +1,8 @@
 package com.github.vakumar1.snake_game;
 
 import java.awt.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class AutonomousPlayer {
     private GridGenerator generator;
@@ -9,7 +11,7 @@ public class AutonomousPlayer {
         this.generator = generator;
     }
 
-    public void updateDirection() {
+    public void simpleUpdateDirection() {
         char currDir = generator.getDirection();
         int hx = generator.head.x;
         int hy = generator.head.y;
@@ -162,72 +164,61 @@ public class AutonomousPlayer {
                 }
             }
         }
-
-
-
-
-
-            /*
-        {
-            if (isRightOf > 0) {
-                if (generator.isValid(hx - 1, hy)) {
-                    generator.updateDirection('L');
-                } else if ((currDir == 'U' && !generator.isValid(hx, hy + 1))
-                        || (currDir == 'D' && !generator.isValid(hx, hy - 1))) {
-                    generator.updateDirection('R');
-                }
-            } else if (isRightOf < 0 || (currDir == 'U' && isAbove > 0) || (currDir == 'D' && isAbove < 0)) {
-                if (generator.grid[generator.head.x + 1][generator.head.y] != GameScreen.SNAKE_CELL) {
-                    generator.updateDirection('R');
-                } else if ((currDir == 'U' && generator.grid[generator.head.x][generator.head.y + 1] == GameScreen.SNAKE_CELL)
-                        || (currDir == 'D' && generator.grid[generator.head.x][generator.head.y - 1] == GameScreen.SNAKE_CELL)) {
-                    generator.updateDirection('L');
-                }
-            }
-        } else {
-            if (isAbove > 0) {
-                if (generator.grid[generator.head.x][generator.head.y - 1] != GameScreen.SNAKE_CELL) {
-                    generator.updateDirection('D');
-                } else if ((currDir == 'R' && generator.grid[generator.head.x + 1][generator.head.y] == GameScreen.SNAKE_CELL)
-                        || (currDir == 'L' && generator.grid[generator.head.x - 1][generator.head.y] == GameScreen.SNAKE_CELL)) {
-                    generator.updateDirection('U');
-                }
-            } else if (isAbove < 0 || (currDir == 'R' && isRightOf > 0) || (currDir == 'L' && isRightOf < 0)) {
-                if (generator.grid[generator.head.x][generator.head.y + 1] != GameScreen.SNAKE_CELL) {
-                    generator.updateDirection('U');
-                } else if ((currDir == 'R' && generator.grid[generator.head.x + 1][generator.head.y] == GameScreen.SNAKE_CELL)
-                        || (currDir == 'L' && generator.grid[generator.head.x - 1][generator.head.y] == GameScreen.SNAKE_CELL)) {
-                    generator.updateDirection('D');
-                }
-            }
-        }
-
-
-        if (currDir == 'U' || currDir == 'D') {
-            if (generator.food.x < generator.head.x) {
-                if (generator.grid[generator.head.x - 1][generator.head.y] != GameScreen.SNAKE_CELL) {
-                    generator.updateDirection('L');
-                } else if (generator.grid[generator.head.x][generator.head.y + 1] == GameScreen.SNAKE_CELL) {
-                    generator.updateDirection('R');
-                }
-            } else if (generator.food.x > generator.head.x && generator.grid[generator.head.x + 1][generator.head.y] != GameScreen.SNAKE_CELL) {
-                generator.updateDirection('R');
-            } else if (generator.food.y != generator.head.y) {
-                generator.updateDirection('R');
-            }
-        } else {
-            if (generator.food.y < generator.head.y && generator.grid[generator.head.x][generator.head.y - 1] != GameScreen.SNAKE_CELL) {
-                generator.updateDirection('D');
-            } else if (generator.food.y > generator.head.y && generator.grid[generator.head.x][generator.head.y + 1] != GameScreen.SNAKE_CELL) {
-                generator.updateDirection('U');
-            } else if (generator.food.x != generator.head.x) {
-                generator.updateDirection('U');
-            }
-        }
-
-          */
     }
 
+    public void smartUpdateDirection() {
+        char currDir = generator.getDirection();
+        Map<Character, Double> dirMap = neighborExpectations();
+        char[] sortedDirs = getSortedDirections(dirMap);
+        switch (currDir) {
+            case 'U':
+                for (char dir : sortedDirs) {
+                    if (dir == 'U') {
+                        return;
+                    } else if (dir == 'R' || dir == 'L') {
+                        generator.updateDirection(dir);
+                        return;
+                    }
+                }
+                break;
+            case 'D':
+                for (char dir : sortedDirs) {
+                    if (dir == 'D') {
+                        return;
+                    } else if (dir == 'R' || dir == 'L') {
+                        generator.updateDirection(dir);
+                        return;
+                    }
+                }
+                break;
+            case 'R':
+                for (char dir : sortedDirs) {
+                    if (dir == 'R') {
+                        return;
+                    } else if (dir == 'U' || dir == 'D') {
+                        generator.updateDirection(dir);
+                        return;
+                    }
+                }
+                break;
+            case 'L':
+                for (char dir : sortedDirs) {
+                    if (dir == 'L') {
+                        return;
+                    } else if (dir == 'U' || dir == 'D') {
+                        generator.updateDirection(dir);
+                        return;
+                    }
+                }
+                break;
+            default:
+                for (char dir : sortedDirs) {
+                    generator.updateDirection(dir);
+                }
+        }
+    }
+
+    /** dumb update helper method */
     private boolean turnRelativeLeft() {
         int midX;
         int midY;
@@ -301,37 +292,61 @@ public class AutonomousPlayer {
         return generator.snakeList.indexOf(firstLeftmost) - generator.snakeList.indexOf(new Point(midX, midY)) > 0;
     }
 
-    /*
-    public boolean turnRelativeLeft() {
-        boolean leftIsNotCycle = true;
-        Point front;
-        switch (generator.getDirection()) {
-            case 'U':
-                if (generator.firstIsCloserToHead(new Point(generator.head.x - 1, generator.head.y + 1),
-                    new Point(generator.head.x, generator.head.y + 1))) {
-                    leftIsNotCycle = false;
-                }
-                break;
-            case 'D':
-                if (generator.firstIsCloserToHead(new Point(generator.head.x + 1, generator.head.y - 1),
-                        new Point(generator.head.x, generator.head.y - 1))) {
-                    leftIsNotCycle = false;
-                }
-                break;
-            case 'R':
-                if (generator.firstIsCloserToHead(new Point(generator.head.x + 1, generator.head.y + 1),
-                        new Point(generator.head.x + 1, generator.head.y))) {
-                    leftIsNotCycle = false;
-                }
-                break;
-            case 'L':
-                if (generator.firstIsCloserToHead(new Point(generator.head.x - 1, generator.head.y - 1),
-                        new Point(generator.head.x - 1, generator.head.y))) {
-                    leftIsNotCycle = false;
-                }
-                break;
+    /** smart update helper methods */
+    private Map<Character, Double> neighborExpectations() {
+        Map<Character, Double> dirMap = new HashMap<Character, Double>();
+        int hx = generator.head.x;
+        int hy = generator.head.y;
+        Point[] neighbors = new Point[]{
+                        new Point(hx, hy + 1),
+                        new Point(hx, hy - 1),
+                        new Point(hx + 1, hy),
+                        new Point(hx - 1, hy)
+                };
+        for (int i = 0; i < 4; i += 1) {
+            dirMap.put(GridGenerator.directions.get(i), pointExpectation(neighbors[i].x, neighbors[i].y));
         }
-        return leftIsNotCycle;
+        return dirMap;
     }
-     */
+
+    private char[] getSortedDirections(Map<Character, Double> dirMap) {
+        char[] sortedDirs = new char[4];
+        for (int i = 0; i < 4; i += 1) {
+            char currChar = GridGenerator.directions.get(i);
+            sortedDirs[i] = currChar;
+            int j = i;
+            while (j > 0 && dirMap.get(currChar) < dirMap.get(sortedDirs[j - 1])) {
+                sortedDirs[j] = sortedDirs[j - 1];
+                sortedDirs[j - 1] = currChar;
+                j -= 1;
+            }
+        }
+        return sortedDirs;
+    }
+
+    private double pointExpectation(int x, int y) {
+        if (!generator.isValid(x, y)) {
+            return 99999.;
+        }
+        double rawDist = Math.sqrt(Math.pow(x - generator.food.x, 2) + Math.pow(y - generator.food.y, 2));
+        return rawDist * badNeighborMultiplier(x, y);
+    }
+
+    private int badNeighborMultiplier(int x, int y) {
+        Point[] neighbors = new Point[]{
+                new Point(x, y + 1),
+                new Point(x, y - 1),
+                new Point(x + 1, y),
+                new Point(x - 1, y)
+        };
+        int badMultiplier = 1;
+        for (Point n: neighbors) {
+            if (!generator.isValid(n.x, n.y) && (!n.equals(generator.head))) {
+                badMultiplier *= 2;
+            }
+        }
+        return badMultiplier;
+    }
+
+    // private boolean itsATrap(Point )
 }

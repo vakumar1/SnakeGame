@@ -70,7 +70,6 @@ public class GridGenerator {
         }
         if (directions.contains(newDirection)) {
             direction = newDirection;
-
             return true;
         }
         return false;
@@ -115,9 +114,13 @@ public class GridGenerator {
     }
 
     public boolean isValid(int x, int y) {
-        boolean inBounds = x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT;
-        boolean isNotSnake = grid[x][y] != GameScreen.SNAKE_CELL;
-        return inBounds && isNotSnake;
+        if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) {
+            return false;
+        }
+        if (grid[x][y] == GameScreen.SNAKE_CELL) {
+            return false;
+        }
+        return true;
     }
 
     public boolean firstIsCloserToGiven(Point given, Point p1, Point p2) {

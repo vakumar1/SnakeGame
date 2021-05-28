@@ -70,7 +70,7 @@ public class GameScreen extends ApplicationAdapter implements Screen, InputProce
         if (!gameOver) {
             updateMap();
             if (!play) {
-                aplayer.updateDirection();
+                aplayer.smartUpdateDirection();
             }
             game.batch.begin();
             GlyphLayout scoreLayout = new GlyphLayout();
@@ -119,7 +119,7 @@ public class GameScreen extends ApplicationAdapter implements Screen, InputProce
     @Override
     public boolean keyDown(int keycode) {
         if (gameOver) {
-            if (Gdx.input.isTouched() || Gdx.input.isKeyPressed(Input.Keys.ANY_KEY)) {
+            if (Gdx.input.isKeyPressed(Input.Keys.ANY_KEY)) {
                 game.setScreen(new MainMenuScreen(game));
                 dispose();
             }
@@ -155,6 +155,12 @@ public class GameScreen extends ApplicationAdapter implements Screen, InputProce
     }
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+        if (gameOver) {
+            if (Gdx.input.isTouched()) {
+                game.setScreen(new MainMenuScreen(game));
+                dispose();
+            }
+        }
         return false;
     }
     @Override

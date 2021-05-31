@@ -11,8 +11,6 @@ import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.utils.ScreenUtils;
-
-import java.awt.*;
 import java.util.concurrent.TimeUnit;
 
 
@@ -57,45 +55,38 @@ public class GameScreen extends ApplicationAdapter implements Screen, InputProce
         renderer.setView(camera);
         renderer.render();
 
-
-        game.batch.begin();
-        GlyphLayout num = new GlyphLayout();
-        for (int i = 0; i < generator.getSnakeSize(); i += 1) {
-            Point p = generator.getSnakePoint(i);
-            num.setText(game.numFont, Integer.toString(i));
-            game.numFont.draw(game.batch, num, (p.x) * SnakeGame.TILE_SIZE, (1 + p.y) * SnakeGame.TILE_SIZE);
-
-        }
-        game.batch.end();
-
-        if (!generator.updateSnake()) {
-            gameOver = true;
-        }
-        updateMap();
         if (!gameOver) {
-            if (!play) {
-                aplayer.smartUpdateDirection();
-            } else {
-                try {
-                    TimeUnit.MILLISECONDS.sleep(50);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+            if (!generator.updateSnake()) {
+                gameOver = true;
             }
+            updateMap();
+
             game.batch.begin();
             GlyphLayout scoreLayout = new GlyphLayout();
             scoreLayout.setText(game.subtitleFont, "Score: " + generator.getScore());
             game.subtitleFont.draw(game.batch, scoreLayout, (SnakeGame.SCREEN_WIDTH - scoreLayout.width) / 2, SnakeGame.SCREEN_HEIGHT - 25);
+            if (play) {
+                GlyphLayout controlInstructions = new GlyphLayout();
+                controlInstructions.setText(game.subtitleFont, "END GAME: Q \nUP: ^ \nDOWN: v \nLEFT: < \nRIGHT: >");
+                game.subtitleFont.draw(game.batch, controlInstructions, 5, SnakeGame.SCREEN_HEIGHT - 25);
+                try {
+                    TimeUnit.MILLISECONDS.sleep(35);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
 
-            GlyphLayout quitLayout = new GlyphLayout();
-            quitLayout.setText(game.subtitleFont, "Press 'Q' to end game");
-            game.subtitleFont.draw(game.batch, quitLayout, (SnakeGame.SCREEN_WIDTH - quitLayout.width) / 2, 25);
+            } else {
+                GlyphLayout controlInstructions = new GlyphLayout();
+                controlInstructions.setText(game.subtitleFont, "END GAME: Q");
+                game.subtitleFont.draw(game.batch, controlInstructions, 5, SnakeGame.SCREEN_HEIGHT - 25);
+                aplayer.smartUpdateDirection();
+            }
             game.batch.end();
         } else {
             game.batch.begin();
             GlyphLayout endLayout = new GlyphLayout();
-            endLayout.setText(game.subtitleFont, "Your score was " + generator.getScore() + ". Press any key to return to the Main Menu.");
-            game.subtitleFont.draw(game.batch, endLayout, (SnakeGame.SCREEN_WIDTH - endLayout.width) / 2, SnakeGame.SCREEN_HEIGHT - 25);
+            endLayout.setText(game.subtitleFont, "Your score was " + generator.getScore() + ". Press 'R' to return to the Main Menu.");
+            game.subtitleFont.draw(game.batch, endLayout, (SnakeGame.SCREEN_WIDTH - endLayout.width) / 2, SnakeGame.SCREEN_HEIGHT / 2);
             game.batch.end();
         }
     }
@@ -116,7 +107,7 @@ public class GameScreen extends ApplicationAdapter implements Screen, InputProce
     @Override
     public boolean keyDown(int keycode) {
         if (gameOver) {
-            if (Gdx.input.isKeyPressed(Input.Keys.ANY_KEY)) {
+            if (Gdx.input.isKeyPressed(Input.Keys.R)) {
                 game.setScreen(new MainMenuScreen(game));
                 dispose();
             }

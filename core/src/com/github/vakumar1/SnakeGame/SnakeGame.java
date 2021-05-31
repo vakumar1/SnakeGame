@@ -21,19 +21,20 @@ public class SnakeGame extends Game {
 	@Override
 	public void create () {
 		batch = new SpriteBatch();
-		FreeTypeFontGenerator fontGenerator = new FreeTypeFontGenerator(Gdx.files.internal("android/assets/oswald/Oswald-Regular.ttf"));
+		FreeTypeFontGenerator fontGenerator = new FreeTypeFontGenerator(Gdx.files.internal("android/assets/Oswald-Regular.ttf"));
 		FreeTypeFontParameter titleParam = new FreeTypeFontParameter();
 		titleParam.size = 30;
-		titleParam.characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.!'()>?:";
+		titleParam.characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.!'()^<>?:|";
 		titleFont = fontGenerator.generateFont(titleParam);
+
 		FreeTypeFontParameter subtitleParam = new FreeTypeFontParameter();
 		subtitleParam.size = 20;
-		subtitleParam.characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.!'()>?:";
+		subtitleParam.characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.!'()^<>?:|";
 		subtitleFont = fontGenerator.generateFont(subtitleParam);
 
 		FreeTypeFontParameter numParam = new FreeTypeFontParameter();
 		numParam.size = 12;
-		numParam.characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.!'()>?:";
+		numParam.characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.!'()^<>?:|";
 		numFont = fontGenerator.generateFont(numParam);
 		this.setScreen(new MainMenuScreen(this));
 	}

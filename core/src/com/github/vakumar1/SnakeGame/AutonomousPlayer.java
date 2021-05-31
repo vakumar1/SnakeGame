@@ -1,6 +1,6 @@
 package com.github.vakumar1.SnakeGame;
 
-import java.awt.*;
+import java.awt.Point;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -78,28 +78,6 @@ public class AutonomousPlayer {
             return 99997.;
         }
         return Math.sqrt(Math.pow(x - generator.getFoodX(), 2) + Math.pow(y - generator.getFoodY(), 2));
-        /*
-        if (!generator.isValid(x, y)) {
-            return 99999.;
-        } else if (badNeighbors(x, y)) {
-            return 99998.;
-        } else if (itsATrap(x, y)){
-            return 99997.;
-        } else {
-            return Math.pow(x - generator.getFoodX(), 2) + Math.pow(y - generator.getFoodY(), 2);
-        }
-         */
-    }
-
-    private int badNeighborsMultiplier(int x, int y) {
-        int badCount = 1;
-        for (char dir: GridGenerator.DIRECTIONS) {
-            Point next = GridGenerator.getNextPoint(x, y, dir);
-            if (!generator.isValid(next.x, next.y)) {
-                badCount *= 2;
-            }
-        }
-        return badCount;
     }
 
     private int badNeighborCount(int x, int y) {

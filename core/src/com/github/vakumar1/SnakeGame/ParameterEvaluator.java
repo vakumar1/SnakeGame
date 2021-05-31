@@ -24,13 +24,12 @@ public class ParameterEvaluator {
     public static void main(String[] args) {
         List<Integer> minInds = new ArrayList<Integer>();
         minInds.add(5);
-        minInds.add(10);
+        //minInds.add(10);
         //minInds.add(7);
         //minInds.add(8);
         List<Double> rootParams = new ArrayList<Double>();
-        rootParams.add(1.5);
         rootParams.add(2.);
-        rootParams.add(3.);
+        //rootParams.add(3.);
         // rootParams.add(2.);
         for (int ind: minInds) {
             for (double param: rootParams) {

@@ -1,7 +1,6 @@
 package com.github.vakumar1.SnakeGame;
 
 import java.awt.Point;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -72,6 +71,7 @@ public class GridGenerator {
         grid[getHeadX()][getHeadY()] = SNAKE_POINT;
         grid[getFoodX()][getFoodY()] = FOOD_POINT;
 
+        direction = 'N';
         score = 0;
     }
 
@@ -181,8 +181,10 @@ public class GridGenerator {
                 return 'U';
             case 'R':
                 return 'L';
-            default:
+            case 'L':
                 return 'R';
+            default:
+                return 'N';
         }
     }
 
@@ -194,8 +196,10 @@ public class GridGenerator {
                 return new Point(currX, currY - 1);
             case 'R':
                 return new Point(currX + 1, currY);
-            default:
+            case 'L':
                 return new Point(currX - 1, currY);
+            default:
+                return new Point(currX, currY);
         }
     }
 
@@ -207,8 +211,10 @@ public class GridGenerator {
                 return 'L';
             case 'R':
                 return 'D';
-            default:
+            case 'L':
                 return 'U';
+            default:
+                return 'N';
         }
     }
 
@@ -220,8 +226,10 @@ public class GridGenerator {
                 return 'R';
             case 'R':
                 return 'U';
-            default:
+            case 'L':
                 return 'D';
+            default:
+                return 'N';
         }
     }
 

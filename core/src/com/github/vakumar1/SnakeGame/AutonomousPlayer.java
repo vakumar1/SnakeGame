@@ -1,4 +1,4 @@
-package com.github.vakumar1.snake_game;
+package com.github.vakumar1.SnakeGame;
 
 import java.awt.*;
 import java.util.HashMap;
@@ -11,12 +11,137 @@ public class AutonomousPlayer {
         this.generator = generator;
     }
 
-    public void simpleUpdateDirection() {
+    public void smartUpdateDirection() {
         char currDir = generator.getDirection();
-        int hx = generator.head.x;
-        int hy = generator.head.y;
-        int isAbove = hy - generator.food.y;
-        int isRightOf = hx - generator.food.x;
+        Map<Character, Double> dirMap = neighborExpectations();
+        char[] sortedDirs = getSortedDirections(dirMap);
+        /*
+        for (char c: sortedDirs) {
+            System.out.print(c + ": " + dirMap.get(c) + " ");
+        }
+        System.out.println(generator.isLoopAbove() + " " + generator.isLoopRight() + " " +
+                generator.isLoopBelow() + " " + generator.isLoopLeft());
+
+         */
+        if (currDir == 'U' || currDir == 'D') {
+            for (char dir : sortedDirs) {
+                if (dir == currDir) {
+                    return;
+                } else if (dir == 'R' || dir == 'L') {
+                    generator.updateDirection(dir);
+                    return;
+                }
+            }
+        } else {
+            for (char dir : sortedDirs) {
+                if (dir == currDir) {
+                    return;
+                } else if (dir == 'U' || dir == 'D') {
+                    generator.updateDirection(dir);
+                    return;
+                }
+            }
+        }
+    }
+
+    /** smart update helper methods */
+    private Map<Character, Double> neighborExpectations() {
+        Map<Character, Double> dirMap = new HashMap<Character, Double>();
+        for (char dir: GridGenerator.DIRECTIONS) {
+            Point next = GridGenerator.getNextPoint(generator.getHeadX(), generator.getHeadY(), dir);
+            dirMap.put(dir, pointExpectation(next.x, next.y));
+        }
+        return dirMap;
+    }
+
+    private char[] getSortedDirections(Map<Character, Double> dirMap) {
+        char[] sortedDirs = new char[4];
+        for (int i = 0; i < 4; i += 1) {
+            char currChar = GridGenerator.DIRECTIONS.get(i);
+            sortedDirs[i] = currChar;
+            int j = i;
+            while (j > 0 && dirMap.get(currChar) < dirMap.get(sortedDirs[j - 1])) {
+                sortedDirs[j] = sortedDirs[j - 1];
+                sortedDirs[j - 1] = currChar;
+                j -= 1;
+            }
+        }
+        return sortedDirs;
+    }
+
+    private double pointExpectation(int x, int y) {
+        if (!generator.isValid(x, y)) {
+            return 99999.;
+        } else if (badNeighborCount(x, y) == 4) {
+            return 99998.;
+        } else if (itsATrap(x, y)) {
+            return 99997.;
+        }
+        return Math.sqrt(Math.pow(x - generator.getFoodX(), 2) + Math.pow(y - generator.getFoodY(), 2));
+        /*
+        if (!generator.isValid(x, y)) {
+            return 99999.;
+        } else if (badNeighbors(x, y)) {
+            return 99998.;
+        } else if (itsATrap(x, y)){
+            return 99997.;
+        } else {
+            return Math.pow(x - generator.getFoodX(), 2) + Math.pow(y - generator.getFoodY(), 2);
+        }
+         */
+    }
+
+    private int badNeighborsMultiplier(int x, int y) {
+        int badCount = 1;
+        for (char dir: GridGenerator.DIRECTIONS) {
+            Point next = GridGenerator.getNextPoint(x, y, dir);
+            if (!generator.isValid(next.x, next.y)) {
+                badCount *= 2;
+            }
+        }
+        return badCount;
+    }
+
+    private int badNeighborCount(int x, int y) {
+        int badCount = 0;
+        for (char dir: GridGenerator.DIRECTIONS) {
+            Point next = GridGenerator.getNextPoint(x, y, dir);
+            if (!generator.isValid(next.x, next.y)) {
+                badCount += 1;
+            }
+        }
+        return badCount;
+    }
+
+    private boolean itsATrap(int x, int y) {
+        int xDiff = x - generator.getHeadX();
+        int yDiff = y - generator.getHeadY();
+        if (Math.abs(yDiff) >= Math.abs(xDiff)) {
+            if (yDiff > 0 && generator.isLoopAbove()) {
+                return true;
+            }
+            if (yDiff < 0 && generator.isLoopBelow()) {
+                return true;
+            }
+        }
+        if (Math.abs(yDiff) <= Math.abs(xDiff)) {
+            if (xDiff > 0 && generator.isLoopRight()) {
+                return true;
+            }
+            if (xDiff < 0 && generator.isLoopLeft()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** simple update method + helper*/
+    public void stupidUpdateDirection() {
+        char currDir = generator.getDirection();
+        int hx = generator.getHeadX();
+        int hy = generator.getHeadY();
+        int isAbove = hy - generator.getFoodY();
+        int isRightOf = hx - generator.getFoodX();
         if (currDir == 'U' || currDir == 'D') {
             if (isRightOf > 0) {
                 if (generator.isValid(hx - 1, hy)) {
@@ -165,68 +290,14 @@ public class AutonomousPlayer {
             }
         }
     }
-
-    public void smartUpdateDirection() {
-        char currDir = generator.getDirection();
-        Map<Character, Double> dirMap = neighborExpectations();
-        char[] sortedDirs = getSortedDirections(dirMap);
-        switch (currDir) {
-            case 'U':
-                for (char dir : sortedDirs) {
-                    if (dir == 'U') {
-                        return;
-                    } else if (dir == 'R' || dir == 'L') {
-                        generator.updateDirection(dir);
-                        return;
-                    }
-                }
-                break;
-            case 'D':
-                for (char dir : sortedDirs) {
-                    if (dir == 'D') {
-                        return;
-                    } else if (dir == 'R' || dir == 'L') {
-                        generator.updateDirection(dir);
-                        return;
-                    }
-                }
-                break;
-            case 'R':
-                for (char dir : sortedDirs) {
-                    if (dir == 'R') {
-                        return;
-                    } else if (dir == 'U' || dir == 'D') {
-                        generator.updateDirection(dir);
-                        return;
-                    }
-                }
-                break;
-            case 'L':
-                for (char dir : sortedDirs) {
-                    if (dir == 'L') {
-                        return;
-                    } else if (dir == 'U' || dir == 'D') {
-                        generator.updateDirection(dir);
-                        return;
-                    }
-                }
-                break;
-            default:
-                for (char dir : sortedDirs) {
-                    generator.updateDirection(dir);
-                }
-        }
-    }
-
-    /** dumb update helper method */
     private boolean turnRelativeLeft() {
         int midX;
         int midY;
         Point[] orderedClockwise;
         switch (generator.getDirection()) {
             case 'U':
-                midX = generator.head.x;
-                midY = generator.head.y + 1;
+                midX = generator.getHeadX();
+                midY = generator.getHeadY() + 1;
                 orderedClockwise = new Point[]{
                         new Point(midX - 1, midY - 1),
                         new Point(midX - 1, midY),
@@ -238,8 +309,8 @@ public class AutonomousPlayer {
                 };
                 break;
             case 'D':
-                midX = generator.head.x;
-                midY = generator.head.y - 1;
+                midX = generator.getHeadX();
+                midY = generator.getHeadY() - 1;
                 orderedClockwise = new Point[]{
                         new Point(midX + 1, midY + 1),
                         new Point(midX + 1, midY),
@@ -251,8 +322,8 @@ public class AutonomousPlayer {
                 };
                 break;
             case 'R':
-                midX = generator.head.x + 1;
-                midY = generator.head.y;
+                midX = generator.getHeadX() + 1;
+                midY = generator.getHeadY();
                 orderedClockwise = new Point[]{
                         new Point(midX - 1, midY + 1),
                         new Point(midX, midY + 1),
@@ -264,8 +335,8 @@ public class AutonomousPlayer {
                 };
                 break;
             default:
-                midX = generator.head.x - 1;
-                midY = generator.head.y;
+                midX = generator.getHeadX() - 1;
+                midY = generator.getHeadY();
                 orderedClockwise = new Point[]{
                         new Point(midX + 1, midY - 1),
                         new Point(midX, midY - 1),
@@ -280,7 +351,7 @@ public class AutonomousPlayer {
 
         Point firstLeftmost = null;
         for (Point p: orderedClockwise) {
-            if (generator.snakeList.contains(p)) {
+            if (generator.snakeHasPoint(p)) {
                 firstLeftmost = p;
                 break;
             }
@@ -289,64 +360,6 @@ public class AutonomousPlayer {
         if (firstLeftmost == null) {
             return true;
         }
-        return generator.snakeList.indexOf(firstLeftmost) - generator.snakeList.indexOf(new Point(midX, midY)) > 0;
+        return generator.getSnakeIndexOfPoint(firstLeftmost) - generator.getSnakeIndexOfPoint(new Point(midX, midY)) > 0;
     }
-
-    /** smart update helper methods */
-    private Map<Character, Double> neighborExpectations() {
-        Map<Character, Double> dirMap = new HashMap<Character, Double>();
-        int hx = generator.head.x;
-        int hy = generator.head.y;
-        Point[] neighbors = new Point[]{
-                        new Point(hx, hy + 1),
-                        new Point(hx, hy - 1),
-                        new Point(hx + 1, hy),
-                        new Point(hx - 1, hy)
-                };
-        for (int i = 0; i < 4; i += 1) {
-            dirMap.put(GridGenerator.directions.get(i), pointExpectation(neighbors[i].x, neighbors[i].y));
-        }
-        return dirMap;
-    }
-
-    private char[] getSortedDirections(Map<Character, Double> dirMap) {
-        char[] sortedDirs = new char[4];
-        for (int i = 0; i < 4; i += 1) {
-            char currChar = GridGenerator.directions.get(i);
-            sortedDirs[i] = currChar;
-            int j = i;
-            while (j > 0 && dirMap.get(currChar) < dirMap.get(sortedDirs[j - 1])) {
-                sortedDirs[j] = sortedDirs[j - 1];
-                sortedDirs[j - 1] = currChar;
-                j -= 1;
-            }
-        }
-        return sortedDirs;
-    }
-
-    private double pointExpectation(int x, int y) {
-        if (!generator.isValid(x, y)) {
-            return 99999.;
-        }
-        double rawDist = Math.sqrt(Math.pow(x - generator.food.x, 2) + Math.pow(y - generator.food.y, 2));
-        return rawDist * badNeighborMultiplier(x, y);
-    }
-
-    private int badNeighborMultiplier(int x, int y) {
-        Point[] neighbors = new Point[]{
-                new Point(x, y + 1),
-                new Point(x, y - 1),
-                new Point(x + 1, y),
-                new Point(x - 1, y)
-        };
-        int badMultiplier = 1;
-        for (Point n: neighbors) {
-            if (!generator.isValid(n.x, n.y) && (!n.equals(generator.head))) {
-                badMultiplier *= 2;
-            }
-        }
-        return badMultiplier;
-    }
-
-    // private boolean itsATrap(Point )
 }

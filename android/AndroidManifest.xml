@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.github.vakumar1.snake_game" >
+    package="com.github.vakumar1.SnakeGame" >
 
     <application
         android:allowBackup="true"
@@ -10,7 +10,7 @@
         android:label="@string/app_name"
         android:theme="@style/GdxTheme" >
         <activity
-            android:name="com.github.vakumar1.snake_game.AndroidLauncher"
+            android:name="com.github.vakumar1.SnakeGame.AndroidLauncher"
             android:label="@string/app_name" 
             android:screenOrientation="landscape"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout">

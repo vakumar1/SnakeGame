@@ -1,13 +1,10 @@
-package com.github.vakumar1.snake_game;
+package com.github.vakumar1.SnakeGame;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
-import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.utils.ScreenUtils;
 
 public class MainMenuScreen implements Screen {
@@ -38,7 +35,6 @@ public class MainMenuScreen implements Screen {
         GlyphLayout subtitleLayout2 = new GlyphLayout();
         subtitleLayout2.setText(game.subtitleFont, "Press 'W' to Watch");
         game.subtitleFont.draw(game.batch, subtitleLayout2, (SnakeGame.SCREEN_WIDTH - subtitleLayout2.width) / 2, (SnakeGame.SCREEN_HEIGHT / 2 - 100));
-
         game.batch.end();
 
         if (Gdx.input.isKeyPressed(Input.Keys.P)) {

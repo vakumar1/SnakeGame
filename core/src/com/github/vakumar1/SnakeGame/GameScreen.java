@@ -1,4 +1,4 @@
-package com.github.vakumar1.snake_game;
+package com.github.vakumar1.SnakeGame;
 
 import com.badlogic.gdx.*;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -11,14 +11,18 @@ import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.utils.ScreenUtils;
+
+import java.awt.*;
 import java.util.concurrent.TimeUnit;
 
 
 public class GameScreen extends ApplicationAdapter implements Screen, InputProcessor {
     public static final TiledMapTileLayer.Cell NOTHING_CELL = new TiledMapTileLayer.Cell().setTile(new StaticTiledMapTile(new TextureRegion(new Texture("blue.gif"))));
-    public static final TiledMapTileLayer.Cell SNAKE_CELL = new TiledMapTileLayer.Cell().setTile(new StaticTiledMapTile(new TextureRegion(new Texture("green.jpg"))));
-    public static final TiledMapTileLayer.Cell FOOD_CELL = new TiledMapTileLayer.Cell().setTile(new StaticTiledMapTile(new TextureRegion(new Texture("orange.jpg"))));
+    public static final TiledMapTileLayer.Cell SNAKE_CELL = new TiledMapTileLayer.Cell().setTile(new StaticTiledMapTile(new TextureRegion(new Texture("indigo.png"))));
+    public static final TiledMapTileLayer.Cell FOOD_CELL = new TiledMapTileLayer.Cell().setTile(new StaticTiledMapTile(new TextureRegion(new Texture("pumpkin.png"))));
 
+    public static final int MIN_CINCH_INDEX = 5;
+    public static final double CINCH_DIVISOR = 2.;
     private SnakeGame game;
     private boolean play;
     private OrthographicCamera camera;
@@ -27,8 +31,6 @@ public class GameScreen extends ApplicationAdapter implements Screen, InputProce
     private TiledMapRenderer renderer;
     private GridGenerator generator;
     private AutonomousPlayer aplayer;
-    private double lastTime;
-    private char lastDir;
     private boolean gameOver;
 
     public GameScreen(final SnakeGame game, boolean play) {
@@ -43,18 +45,10 @@ public class GameScreen extends ApplicationAdapter implements Screen, InputProce
         renderer = new OrthogonalTiledMapRenderer(map);
         Gdx.input.setInputProcessor(this);
 
-        generator = new GridGenerator();
-        generator.initGrid();
-        for (int x = 0; x < mapLayer.getWidth(); x += 1) {
-            for (int y = 0; y < mapLayer.getHeight(); y += 1) {
-                mapLayer.setCell(x, y, generator.grid[x][y]);
-            }
-        }
+        generator = new GridGenerator(MIN_CINCH_INDEX, CINCH_DIVISOR);
         aplayer = new AutonomousPlayer(generator);
         gameOver = false;
-        lastTime = 0;
     }
-
 
     @Override
     public void render(float delta) {
@@ -63,14 +57,30 @@ public class GameScreen extends ApplicationAdapter implements Screen, InputProce
         renderer.setView(camera);
         renderer.render();
 
+
+        game.batch.begin();
+        GlyphLayout num = new GlyphLayout();
+        for (int i = 0; i < generator.getSnakeSize(); i += 1) {
+            Point p = generator.getSnakePoint(i);
+            num.setText(game.numFont, Integer.toString(i));
+            game.numFont.draw(game.batch, num, (p.x) * SnakeGame.TILE_SIZE, (1 + p.y) * SnakeGame.TILE_SIZE);
+
+        }
+        game.batch.end();
+
         if (!generator.updateSnake()) {
             gameOver = true;
         }
-
+        updateMap();
         if (!gameOver) {
-            updateMap();
             if (!play) {
                 aplayer.smartUpdateDirection();
+            } else {
+                try {
+                    TimeUnit.MILLISECONDS.sleep(50);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
             game.batch.begin();
             GlyphLayout scoreLayout = new GlyphLayout();
@@ -91,30 +101,17 @@ public class GameScreen extends ApplicationAdapter implements Screen, InputProce
     }
 
     @Override
-    public void resize(int width, int height) {
-    }
-
-
+    public void resize(int width, int height) {}
     @Override
-    public void show() {
-    }
-
+    public void show() {}
     @Override
-    public void hide() {
-    }
-
+    public void hide() {}
     @Override
-    public void pause() {
-    }
-
+    public void pause() {}
     @Override
-    public void resume() {
-    }
-
-
+    public void resume() {}
     @Override
-    public void dispose () {
-    }
+    public void dispose () {}
 
     @Override
     public boolean keyDown(int keycode) {
@@ -183,13 +180,20 @@ public class GameScreen extends ApplicationAdapter implements Screen, InputProce
     private void updateMap() {
         for (int x = 0; x < mapLayer.getWidth(); x += 1) {
             for (int y = 0; y < mapLayer.getHeight(); y += 1) {
-                mapLayer.setCell(x, y, generator.grid[x][y]);
+                switch (generator.getGridCell(x, y)) {
+                    case GridGenerator.NOTHING_POINT:
+                        mapLayer.setCell(x, y, NOTHING_CELL);
+                        break;
+                    case GridGenerator.SNAKE_POINT:
+                        mapLayer.setCell(x, y, SNAKE_CELL);
+                        break;
+                    case GridGenerator.FOOD_POINT:
+                        mapLayer.setCell(x, y, FOOD_CELL);
+                        break;
+                    default:
+                        break;
+                }
             }
-        }
-        try {
-            TimeUnit.MILLISECONDS.sleep(50);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
     }
 }

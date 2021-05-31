@@ -1,4 +1,4 @@
-package com.github.vakumar1.snake_game;
+package com.github.vakumar1.SnakeGame;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
@@ -16,6 +16,7 @@ public class SnakeGame extends Game {
 	public SpriteBatch batch;
 	public BitmapFont titleFont;
 	public BitmapFont subtitleFont;
+	public BitmapFont numFont;
 
 	@Override
 	public void create () {
@@ -29,6 +30,11 @@ public class SnakeGame extends Game {
 		subtitleParam.size = 20;
 		subtitleParam.characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.!'()>?:";
 		subtitleFont = fontGenerator.generateFont(subtitleParam);
+
+		FreeTypeFontParameter numParam = new FreeTypeFontParameter();
+		numParam.size = 12;
+		numParam.characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.!'()>?:";
+		numFont = fontGenerator.generateFont(numParam);
 		this.setScreen(new MainMenuScreen(this));
 	}
 

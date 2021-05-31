@@ -1,8 +1,8 @@
-package com.github.vakumar1.snake_game.desktop;
+package com.github.vakumar1.SnakeGame.desktop;
 
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
-import com.github.vakumar1.snake_game.SnakeGame;
+import com.github.vakumar1.SnakeGame.SnakeGame;
 
 public class DesktopLauncher {
 	public static void main (String[] arg) {

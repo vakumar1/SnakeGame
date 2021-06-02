@@ -4,16 +4,18 @@ gwt {
     minHeapSize="1G"
 
     src = files(file("src/")) // Needs to be in front of "modules" below.
-    modules 'com.github.vakumar1.snake_game.GdxDefinition'
-    devModules 'com.github.vakumar1.snake_game.GdxDefinitionSuperdev'
+    modules 'com.github.vakumar1.SnakeGame.GdxDefinition'
+    devModules 'com.github.vakumar1.SnakeGame.GdxDefinitionSuperdev'
     project.webAppDirName = 'webapp'
 
-    compiler {
-        strict = true;
-        disableCastChecking = true;
-    }
+    compiler(({
+        strict = true
+        disableCastChecking = true
+    } as Closure<GwtCompileOptions>))
 }
 
+
+import org.wisepersist.gradle.plugins.gwt.GwtCompileOptions
 import org.wisepersist.gradle.plugins.gwt.GwtSuperDev
 import org.akhikhl.gretty.AppBeforeIntegrationTestTask
 

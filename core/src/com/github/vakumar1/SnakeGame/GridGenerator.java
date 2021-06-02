@@ -203,6 +203,22 @@ public class GridGenerator {
         }
     }
 
+    public static char getNextDirection(int currX, int currY, int nextX, int nextY) {
+        int xDiff = nextX - currX;
+        int yDiff = nextY - currY;
+        if (xDiff == 0 && yDiff == 1) {
+            return 'U';
+        } else if (xDiff == 0 && yDiff == -1) {
+            return 'D';
+        } else if (xDiff == 1 && yDiff == 0) {
+            return 'R';
+        } else if (xDiff == -1 && yDiff == 0) {
+            return 'L';
+        } else {
+            return 'N';
+        }
+    }
+
     public static char rotateClockwiseDirection(char dir) {
         switch (dir) {
             case 'U':

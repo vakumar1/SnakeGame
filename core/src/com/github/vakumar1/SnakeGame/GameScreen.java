@@ -79,7 +79,7 @@ public class GameScreen extends ApplicationAdapter implements Screen, InputProce
                 GlyphLayout controlInstructions = new GlyphLayout();
                 controlInstructions.setText(game.subtitleFont, "END GAME: Q");
                 game.subtitleFont.draw(game.batch, controlInstructions, 5, SnakeGame.SCREEN_HEIGHT - 25);
-                aplayer.smartUpdateDirection();
+                aplayer.pathfinderUpdateDirection();
             }
             game.batch.end();
         } else {

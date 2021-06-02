@@ -1,14 +1,160 @@
 package com.github.vakumar1.SnakeGame;
 
+import sun.awt.image.ImageWatched;
+
 import java.awt.Point;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+
+import static com.github.vakumar1.SnakeGame.GridGenerator.GRID_HEIGHT;
+import static com.github.vakumar1.SnakeGame.GridGenerator.GRID_WIDTH;
 
 public class AutonomousPlayer {
     private GridGenerator generator;
+    private LinkedList<Point> path;
 
     public AutonomousPlayer(GridGenerator generator) {
         this.generator = generator;
+        this.path = new LinkedList<>();
+    }
+
+    public void pathfinderUpdateDirection() {
+        if (path.size() == 0) {
+            path = getAStarPath();
+            if (path == null) {
+                path = new LinkedList<>();
+                smartUpdateDirection();
+                return;
+            }
+        }
+        Point next = path.removeFirst();
+        char nextDir = GridGenerator.getNextDirection(generator.getHeadX(), generator.getHeadY(), next.x, next.y);
+        generator.updateDirection(nextDir);
+    }
+
+    /** pathfinder helper functions */
+
+    private LinkedList<Point> getAStarPath() {
+        LinkedList<Point> path = new LinkedList<>();
+        boolean[][] marked = new boolean[GRID_WIDTH][GRID_HEIGHT];
+        double[][] startDistances = new double[GRID_WIDTH][GRID_WIDTH];
+        double[][] endDistances = new double[GRID_WIDTH][GRID_WIDTH];
+        int[][][] previous = new int[GRID_WIDTH][GRID_WIDTH][2];
+        for (int x = 0; x < GRID_WIDTH; x += 1) {
+            for (int y = 0; y < GRID_HEIGHT; y += 1) {
+                marked[x][y] = false;
+            }
+        }
+        for (int x = 0; x < GRID_WIDTH; x += 1) {
+            for (int y = 0; y < GRID_HEIGHT; y += 1) {
+                startDistances[x][y] = 99999;
+            }
+        }
+        for (int x = 0; x < GRID_WIDTH; x += 1) {
+            for (int y = 0; y < GRID_HEIGHT; y += 1) {
+                endDistances[x][y] = 99999;
+            }
+        }
+        for (int x = 0; x < GRID_WIDTH; x += 1) {
+            for (int y = 0; y < GRID_HEIGHT; y += 1) {
+                previous[x][y] = new int[]{-1, -1};
+            }
+        }
+
+        int[] start = new int[]{generator.getHeadX(), generator.getHeadY()};
+        int[] end = new int[]{generator.getFoodX(), generator.getFoodY()};
+        int[] curr;
+        startDistances[start[0]][start[1]] = 0;
+        endDistances[start[0]][start[1]] = heuristic(start, end);
+        curr = start;
+        boolean reached = false;
+        while (!reached && curr != null) {
+            System.out.println(curr[0] + " " + curr[1]);
+            if (Arrays.equals(curr, end)) {
+                reached = true;
+                break;
+            }
+            marked[curr[0]][curr[1]] = true;
+            for (int[] n: neighbors(curr)) {
+                if (Arrays.equals(n, end)) {
+                    reached = true;
+                    break;
+                }
+                astarIteration(n, curr, end, marked, startDistances, endDistances, previous);
+            }
+            curr = getMinPoint(endDistances, marked);
+        }
+
+        if (curr == null) {
+            return null;
+        }
+
+        boolean backToStart = false;
+        while (!backToStart) {
+            backToStart = pathIteration(curr, start, path);
+            curr = previous[curr[0]][curr[1]];
+        }
+        path.addLast(new Point(end[0], end[1]));
+        return path;
+    }
+
+    private void astarIteration(int[] n, int[] curr, int[] end, boolean[][] marked, double[][] startDistances, double[][] endDistances, int[][][] previous) {
+        double startDist = startDistances[curr[0]][curr[1]] + 1;
+        double endDist = heuristic(n, end);
+        if (!marked[n[0]][n[1]] && startDist < startDistances[n[0]][n[1]]) {
+            startDistances[n[0]][n[1]] = startDist;
+            endDistances[n[0]][n[1]] = endDist;
+            previous[n[0]][n[1]] = curr.clone();
+        }
+    }
+
+    public boolean pathIteration(int[] curr, int[] start, LinkedList<Point> path) {
+        if (!generator.isValid(curr[0], curr[1]) || Arrays.equals(curr, start)) {
+            return true;
+        }
+        path.addFirst(new Point(curr[0], curr[1]));
+        return false;
+    }
+
+    private List<int[]> neighbors(int[] curr) {
+        int x = curr[0];
+        int y = curr[1];
+        List<int[]> neighbors = new ArrayList<int[]>();
+
+        int[][] points = new int[][]{
+                new int[]{x, y + 1},
+                new int[]{x + 1, y},
+                new int[]{x, y - 1},
+                new int[]{x - 1, y}
+        };
+
+        for (int[] point: points) {
+            if (generator.isValid(point[0], point[1])) {
+                neighbors.add(point);
+            }
+        }
+        return neighbors;
+    }
+
+    private double heuristic(int[] p1, int[] p2) {
+        int x1 = p1[0];
+        int y1 = p1[1];
+        int x2 = p2[0];
+        int y2 = p2[1];
+        return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+    }
+
+    private int[] getMinPoint(double[][] endDistances, boolean[][] marked) {
+        int[] minPoint = null;
+        double minDist = 99999;
+        for (int x = 0; x < GRID_WIDTH; x += 1) {
+            for (int y = 0; y < GRID_HEIGHT; y += 1) {
+                if (!marked[x][y] && endDistances[x][y] < minDist) {
+                    minPoint = new int[]{x, y};
+                    minDist = endDistances[x][y];
+                }
+            }
+        }
+        return minPoint;
     }
 
     public void smartUpdateDirection() {

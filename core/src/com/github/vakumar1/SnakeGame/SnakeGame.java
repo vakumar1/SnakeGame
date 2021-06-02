@@ -21,7 +21,7 @@ public class SnakeGame extends Game {
 	@Override
 	public void create () {
 		batch = new SpriteBatch();
-		FreeTypeFontGenerator fontGenerator = new FreeTypeFontGenerator(Gdx.files.internal("android/assets/Oswald-Regular.ttf"));
+		FreeTypeFontGenerator fontGenerator = new FreeTypeFontGenerator(Gdx.files.internal("Oswald-Regular.ttf"));
 		FreeTypeFontParameter titleParam = new FreeTypeFontParameter();
 		titleParam.size = 30;
 		titleParam.characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.!'()^<>?:|";

@@ -29,6 +29,7 @@ public class GameScreen extends ApplicationAdapter implements Screen, InputProce
     private TiledMapRenderer renderer;
     private GridGenerator generator;
     private AutonomousPlayer aplayer;
+    private boolean gameStarted;
     private boolean gameOver;
 
     public GameScreen(final SnakeGame game, boolean play) {
@@ -45,6 +46,7 @@ public class GameScreen extends ApplicationAdapter implements Screen, InputProce
 
         generator = new GridGenerator(MIN_CINCH_INDEX, CINCH_DIVISOR);
         aplayer = new AutonomousPlayer(generator);
+        gameStarted = false;
         gameOver = false;
     }
 
@@ -54,34 +56,54 @@ public class GameScreen extends ApplicationAdapter implements Screen, InputProce
         camera.update();
         renderer.setView(camera);
         renderer.render();
-
         if (!gameOver) {
             if (!generator.updateSnake()) {
                 gameOver = true;
             }
             updateMap();
-
-            game.batch.begin();
-            GlyphLayout scoreLayout = new GlyphLayout();
-            scoreLayout.setText(game.subtitleFont, "Score: " + generator.getScore());
-            game.subtitleFont.draw(game.batch, scoreLayout, (SnakeGame.SCREEN_WIDTH - scoreLayout.width) / 2, SnakeGame.SCREEN_HEIGHT - 25);
-            if (play) {
-                GlyphLayout controlInstructions = new GlyphLayout();
-                controlInstructions.setText(game.subtitleFont, "END GAME: Q \nUP: ^ \nDOWN: v \nLEFT: < \nRIGHT: >");
-                game.subtitleFont.draw(game.batch, controlInstructions, 5, SnakeGame.SCREEN_HEIGHT - 25);
-                try {
-                    TimeUnit.MILLISECONDS.sleep(35);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+            if (!gameStarted) {
+                if (play) {
+                    game.batch.begin();
+                    GlyphLayout controlInstructions = new GlyphLayout();
+                    controlInstructions.setText(game.subtitleFont,
+                            "USE ARROW KEYS TO CHANGE DIRECTION\n" +
+                                    "(PRESS ANY DIRECTION TO START)\n" +
+                                    "                      --------                \n" +
+                                    "                     |    ^    |                \n" +
+                                    "            -------- -------- -------- \n" +
+                                    "           |    <    |    v    |    >    |\n" +
+                                    "            -------- -------- -------- \n"
+                    );
+                    game.subtitleFont.draw(game.batch, controlInstructions, (SnakeGame.SCREEN_WIDTH - controlInstructions.width) / 2,
+                            SnakeGame.SCREEN_HEIGHT / 2 + 50);
+                    game.batch.end();
+                } else {
+                    game.batch.begin();
+                    GlyphLayout controlInstructions = new GlyphLayout();
+                    controlInstructions.setText(game.subtitleFont,"PRESS ANY DIRECTION TO START");
+                    game.subtitleFont.draw(game.batch, controlInstructions, (SnakeGame.SCREEN_WIDTH - controlInstructions.width) / 2,
+                            SnakeGame.SCREEN_HEIGHT / 2 + 50);
+                    game.batch.end();
                 }
-
             } else {
+                game.batch.begin();
+                GlyphLayout scoreLayout = new GlyphLayout();
+                scoreLayout.setText(game.subtitleFont, "Score: " + generator.getScore());
+                game.subtitleFont.draw(game.batch, scoreLayout, (SnakeGame.SCREEN_WIDTH - scoreLayout.width) / 2, SnakeGame.SCREEN_HEIGHT - 25);
                 GlyphLayout controlInstructions = new GlyphLayout();
-                controlInstructions.setText(game.subtitleFont, "END GAME: Q");
+                controlInstructions.setText(game.subtitleFont, "PRESS 'Q' TO END GAME");
                 game.subtitleFont.draw(game.batch, controlInstructions, 5, SnakeGame.SCREEN_HEIGHT - 25);
-                aplayer.pathfinderUpdateDirection();
+                game.batch.end();
+                if (play) {
+                    try {
+                        TimeUnit.MILLISECONDS.sleep(35);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    aplayer.smartUpdateDirection();
+                }
             }
-            game.batch.end();
         } else {
             game.batch.begin();
             GlyphLayout endLayout = new GlyphLayout();
@@ -106,29 +128,38 @@ public class GameScreen extends ApplicationAdapter implements Screen, InputProce
 
     @Override
     public boolean keyDown(int keycode) {
-        if (gameOver) {
+        if (!gameOver) {
+            if (keycode == Input.Keys.Q) {
+                gameOver = true;
+            } else {
+                gameStarted = true;
+                if (play) {
+                    switch (keycode) {
+                        case Input.Keys.Q:
+                            gameOver = true;
+                            break;
+                        case Input.Keys.UP:
+                            generator.updateDirection('U');
+                            break;
+                        case Input.Keys.DOWN:
+                            generator.updateDirection('D');
+                            break;
+                        case Input.Keys.RIGHT:
+                            generator.updateDirection('R');
+                            break;
+                        case Input.Keys.LEFT:
+                            generator.updateDirection('L');
+                            break;
+                        default:
+                            gameStarted = false;
+                            break;
+                    }
+                }
+            }
+        } else {
             if (Gdx.input.isKeyPressed(Input.Keys.R)) {
                 game.setScreen(new MainMenuScreen(game));
                 dispose();
-            }
-        } else if (keycode == Input.Keys.Q) {
-            gameOver = true;
-        } else if (play) {
-            switch (keycode) {
-                case Input.Keys.UP:
-                    generator.updateDirection('U');
-                    break;
-                case Input.Keys.DOWN:
-                    generator.updateDirection('D');
-                    break;
-                case Input.Keys.RIGHT:
-                    generator.updateDirection('R');
-                    break;
-                case Input.Keys.LEFT:
-                    generator.updateDirection('L');
-                    break;
-                default:
-                    break;
             }
         }
         return false;

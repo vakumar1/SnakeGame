@@ -135,9 +135,6 @@ public class GameScreen extends ApplicationAdapter implements Screen, InputProce
                 gameStarted = true;
                 if (play) {
                     switch (keycode) {
-                        case Input.Keys.Q:
-                            gameOver = true;
-                            break;
                         case Input.Keys.UP:
                             generator.updateDirection('U');
                             break;
@@ -151,7 +148,6 @@ public class GameScreen extends ApplicationAdapter implements Screen, InputProce
                             generator.updateDirection('L');
                             break;
                         default:
-                            gameStarted = false;
                             break;
                     }
                 }

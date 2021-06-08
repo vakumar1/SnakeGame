@@ -4,8 +4,8 @@ gwt {
     minHeapSize="1G"
 
     src = files(file("src/")) // Needs to be in front of "modules" below.
-    modules 'com.github.vakumar1.snake_game.GdxDefinition'
-    devModules 'com.github.vakumar1.snake_game.GdxDefinitionSuperdev'
+    modules 'com.github.vakumar1.snakegame.GdxDefinition'
+    devModules 'com.github.vakumar1.snakegame.GdxDefinitionSuperdev'
     project.webAppDirName = 'webapp'
 
     compiler {
@@ -83,6 +83,8 @@ task addSource {
 
 tasks.compileGwt.dependsOn(addSource)
 tasks.draftCompileGwt.dependsOn(addSource)
+
+
 
 sourceCompatibility = 1.7
 sourceSets.main.java.srcDirs = [ "src/" ]

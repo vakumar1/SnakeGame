@@ -14,4 +14,7 @@ Snake Game implemented with LibGDX.
     * GridGenerator.java: represent and update snake game grid
     * AutonomousPlayer.java: update the snake's direction with greedy approach
     * AutonomousPlayerRunner.java: repeatedly run the autonomous player and output aggregate score statistics
+
+The best score I've seen the Autonomous Player get so far is 377:
+![Alt text](snakegame_best_score.png?raw=true "Title")
     

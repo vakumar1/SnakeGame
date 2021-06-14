@@ -1,9 +1,9 @@
-package com.github.vakumar1.SnakeGame.client;
+package com.github.vakumar1.snakegame.client;
 
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.backends.gwt.GwtApplication;
 import com.badlogic.gdx.backends.gwt.GwtApplicationConfiguration;
-import com.github.vakumar1.SnakeGame.SnakeGame;
+import com.github.vakumar1.snakegame.SnakeGame;
 
 public class HtmlLauncher extends GwtApplication {
 

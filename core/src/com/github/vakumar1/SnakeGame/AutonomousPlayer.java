@@ -1,209 +1,97 @@
-package com.github.vakumar1.SnakeGame;
-
-import sun.awt.image.ImageWatched;
+package com.github.vakumar1.snakegame;
 
 import java.awt.Point;
 import java.util.*;
-
-import static com.github.vakumar1.SnakeGame.GridGenerator.GRID_HEIGHT;
-import static com.github.vakumar1.SnakeGame.GridGenerator.GRID_WIDTH;
+import static com.github.vakumar1.snakegame.GridGenerator.*;
 
 public class AutonomousPlayer {
+    /**
+     * The Autonomous Player Class provides a recommended update to the snake's direction (like a player pressing a direction key) using:
+     *      (i) a general greedy approach (i.e., only considering the neighboring points)
+     *      (ii) a loop-checker (to see if a direction would move the snake into a loop that it cannot escape)
+     * */
+    private final static double INVALID_POINT_HEUR = 99999.;
+    private final static double SURROUNDED_POINT_HEUR = 99998.;
+    private final static double TRAP_POINT_HEUR = 99997.;
     private GridGenerator generator;
-    private LinkedList<Point> path;
 
     public AutonomousPlayer(GridGenerator generator) {
         this.generator = generator;
-        this.path = new LinkedList<>();
     }
 
-    public void pathfinderUpdateDirection() {
-        if (path.size() == 0) {
-            path = getAStarPath();
-            if (path == null) {
-                path = new LinkedList<>();
-                smartUpdateDirection();
-                return;
-            }
-        }
-        Point next = path.removeFirst();
-        char nextDir = GridGenerator.getNextDirection(generator.getHeadX(), generator.getHeadY(), next.x, next.y);
-        generator.updateDirection(nextDir);
-    }
-
-    /** pathfinder helper functions */
-
-    private LinkedList<Point> getAStarPath() {
-        LinkedList<Point> path = new LinkedList<>();
-        boolean[][] marked = new boolean[GRID_WIDTH][GRID_HEIGHT];
-        double[][] startDistances = new double[GRID_WIDTH][GRID_WIDTH];
-        double[][] endDistances = new double[GRID_WIDTH][GRID_WIDTH];
-        int[][][] previous = new int[GRID_WIDTH][GRID_WIDTH][2];
-        for (int x = 0; x < GRID_WIDTH; x += 1) {
-            for (int y = 0; y < GRID_HEIGHT; y += 1) {
-                marked[x][y] = false;
-            }
-        }
-        for (int x = 0; x < GRID_WIDTH; x += 1) {
-            for (int y = 0; y < GRID_HEIGHT; y += 1) {
-                startDistances[x][y] = 99999;
-            }
-        }
-        for (int x = 0; x < GRID_WIDTH; x += 1) {
-            for (int y = 0; y < GRID_HEIGHT; y += 1) {
-                endDistances[x][y] = 99999;
-            }
-        }
-        for (int x = 0; x < GRID_WIDTH; x += 1) {
-            for (int y = 0; y < GRID_HEIGHT; y += 1) {
-                previous[x][y] = new int[]{-1, -1};
-            }
-        }
-
-        int[] start = new int[]{generator.getHeadX(), generator.getHeadY()};
-        int[] end = new int[]{generator.getFoodX(), generator.getFoodY()};
-        int[] curr;
-        startDistances[start[0]][start[1]] = 0;
-        endDistances[start[0]][start[1]] = heuristic(start, end);
-        curr = start;
-        boolean reached = false;
-        while (!reached && curr != null) {
-            System.out.println(curr[0] + " " + curr[1]);
-            if (Arrays.equals(curr, end)) {
-                reached = true;
-                break;
-            }
-            marked[curr[0]][curr[1]] = true;
-            for (int[] n: neighbors(curr)) {
-                if (Arrays.equals(n, end)) {
-                    reached = true;
-                    break;
-                }
-                astarIteration(n, curr, end, marked, startDistances, endDistances, previous);
-            }
-            curr = getMinPoint(endDistances, marked);
-        }
-
-        if (curr == null) {
-            return null;
-        }
-
-        boolean backToStart = false;
-        while (!backToStart) {
-            backToStart = pathIteration(curr, start, path);
-            curr = previous[curr[0]][curr[1]];
-        }
-        path.addLast(new Point(end[0], end[1]));
-        return path;
-    }
-
-    private void astarIteration(int[] n, int[] curr, int[] end, boolean[][] marked, double[][] startDistances, double[][] endDistances, int[][][] previous) {
-        double startDist = startDistances[curr[0]][curr[1]] + 1;
-        double endDist = heuristic(n, end);
-        if (!marked[n[0]][n[1]] && startDist < startDistances[n[0]][n[1]]) {
-            startDistances[n[0]][n[1]] = startDist;
-            endDistances[n[0]][n[1]] = endDist;
-            previous[n[0]][n[1]] = curr.clone();
-        }
-    }
-
-    public boolean pathIteration(int[] curr, int[] start, LinkedList<Point> path) {
-        if (!generator.isValid(curr[0], curr[1]) || Arrays.equals(curr, start)) {
-            return true;
-        }
-        path.addFirst(new Point(curr[0], curr[1]));
-        return false;
-    }
-
-    private List<int[]> neighbors(int[] curr) {
-        int x = curr[0];
-        int y = curr[1];
-        List<int[]> neighbors = new ArrayList<int[]>();
-
-        int[][] points = new int[][]{
-                new int[]{x, y + 1},
-                new int[]{x + 1, y},
-                new int[]{x, y - 1},
-                new int[]{x - 1, y}
-        };
-
-        for (int[] point: points) {
-            if (generator.isValid(point[0], point[1])) {
-                neighbors.add(point);
-            }
-        }
-        return neighbors;
-    }
-
-    private double heuristic(int[] p1, int[] p2) {
-        int x1 = p1[0];
-        int y1 = p1[1];
-        int x2 = p2[0];
-        int y2 = p2[1];
-        return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-    }
-
-    private int[] getMinPoint(double[][] endDistances, boolean[][] marked) {
-        int[] minPoint = null;
-        double minDist = 99999;
-        for (int x = 0; x < GRID_WIDTH; x += 1) {
-            for (int y = 0; y < GRID_HEIGHT; y += 1) {
-                if (!marked[x][y] && endDistances[x][y] < minDist) {
-                    minPoint = new int[]{x, y};
-                    minDist = endDistances[x][y];
-                }
-            }
-        }
-        return minPoint;
-    }
-
-    public void smartUpdateDirection() {
-        char currDir = generator.getDirection();
-        Map<Character, Double> dirMap = neighborExpectations();
+    /** public update method: updates generator's current direction */
+    public void greedyUpdateDirection() {
+        Map<Character, Double> dirMap = directionExpectations();
         char[] sortedDirs = getSortedDirections(dirMap);
-        /*
-        for (char c: sortedDirs) {
-            System.out.print(c + ": " + dirMap.get(c) + " ");
-        }
-        System.out.println(generator.isLoopAbove() + " " + generator.isLoopRight() + " " +
-                generator.isLoopBelow() + " " + generator.isLoopLeft());
-
-         */
-        if (currDir == 'U' || currDir == 'D') {
-            for (char dir : sortedDirs) {
-                if (dir == currDir) {
-                    return;
-                } else if (dir == 'R' || dir == 'L') {
-                    generator.updateDirection(dir);
-                    return;
-                }
-            }
-        } else {
-            for (char dir : sortedDirs) {
-                if (dir == currDir) {
-                    return;
-                } else if (dir == 'U' || dir == 'D') {
-                    generator.updateDirection(dir);
-                    return;
-                }
-            }
-        }
+        generator.updateDirection(sortedDirs[0]);
     }
 
-    /** smart update helper methods */
-    private Map<Character, Double> neighborExpectations() {
-        Map<Character, Double> dirMap = new HashMap<Character, Double>();
-        for (char dir: GridGenerator.DIRECTIONS) {
-            Point next = GridGenerator.getNextPoint(generator.getHeadX(), generator.getHeadY(), dir);
-            dirMap.put(dir, pointExpectation(next.x, next.y));
+    /** greedy update helper methods */
+
+    /**
+     * returns a map of the "scores" of each potential direction change, represented as:
+     *  N (north): move in current direction
+     *  W (west): turn counter-clockwise
+     *  E (east): turn clockwise
+     */
+    private Map<Character, Double> directionExpectations() {
+        Map<Character, Double> dirMap = new HashMap<>();
+        char NDir = generator.getDirection();
+        char WDir = rotateCounterclockwiseDirection(generator.getDirection());
+        char EDir = rotateClockwiseDirection(generator.getDirection());
+
+        /* 5 "frontal" points represented as cardinal directions
+            from perspective of current direction: W, NW, N, NE, E*/
+        Point N = getNextPoint(generator.getHeadX(), generator.getHeadY(), NDir);
+        Point W = getNextPoint(generator.getHeadX(), generator.getHeadY(), WDir);
+        Point E = getNextPoint(generator.getHeadX(), generator.getHeadY(), EDir);
+        Point NW = getNextPoint(N.x, N.y, WDir);
+        Point NE = getNextPoint(N.x, N.y, EDir);
+
+        /* put point expectations for 3 potential direction changes */
+        dirMap.put(NDir, pointExpectation(N.x, N.y));
+        dirMap.put(WDir, pointExpectation(W.x, W.y));
+        dirMap.put(EDir, pointExpectation(E.x, E.y));
+        double NWScore = pointExpectation(NW.x, NW.y);
+        double NEScore = pointExpectation(NE.x, NE.y);
+
+        if (dirMap.get(NDir) == INVALID_POINT_HEUR) {
+            /* if head-on collision, move away from the formed loop:
+             * Example: (H = HEAD, T = trap square, N = NORTH, S = snake, . = empty space)
+             *      . . . . . . . . . .
+             *      S S S S N S S S S S
+             *      S . . T H . . . . .
+             *      S . . . S . . . . .
+             *      S S S S S . . . . .
+             */
+            if (loopIsClockwise(N)) {
+                dirMap.put(WDir, Math.max(TRAP_POINT_HEUR, dirMap.get(WDir)));
+            } else {
+                dirMap.put(EDir, Math.max(TRAP_POINT_HEUR, dirMap.get(EDir)));
+            }
+        } else if (NWScore == INVALID_POINT_HEUR && NEScore == INVALID_POINT_HEUR) {
+            /* if "walking into a trap", do not continue forward:
+             * if head-on collision, move away from the formed loop:
+             * Example: (H = HEAD, T = trap square, S = snake, . = empty space)
+             *      . . . . . . . . . .
+             *      S S S S S S S S S S
+             *      S S S S H T . . . S
+             *      . . . . . S S S S S
+             *
+             */
+            dirMap.put(NDir, Math.max(TRAP_POINT_HEUR, dirMap.get(NDir)));
         }
         return dirMap;
     }
 
+    /** return an array of sorted directions
+     * !!! insertion sort is unstable (assume dirMap.keySet() returns directions randomly) !!!
+     */
     private char[] getSortedDirections(Map<Character, Double> dirMap) {
-        char[] sortedDirs = new char[4];
-        for (int i = 0; i < 4; i += 1) {
-            char currChar = GridGenerator.DIRECTIONS.get(i);
+        List<Character> directions = new LinkedList<>(dirMap.keySet());
+        char[] sortedDirs = new char[dirMap.size()];
+        for (int i = 0; i < dirMap.size(); i += 1) {
+            char currChar = directions.get(i);
             sortedDirs[i] = currChar;
             int j = i;
             while (j > 0 && dirMap.get(currChar) < dirMap.get(sortedDirs[j - 1])) {
@@ -215,21 +103,23 @@ public class AutonomousPlayer {
         return sortedDirs;
     }
 
+    /** return the estimated "score" of a point on the grid */
     private double pointExpectation(int x, int y) {
         if (!generator.isValid(x, y)) {
-            return 99999.;
+            return INVALID_POINT_HEUR;
         } else if (badNeighborCount(x, y) == 4) {
-            return 99998.;
-        } else if (itsATrap(x, y)) {
-            return 99997.;
+            return SURROUNDED_POINT_HEUR;
         }
-        return Math.sqrt(Math.pow(x - generator.getFoodX(), 2) + Math.pow(y - generator.getFoodY(), 2));
+
+        /* default to Manhattan distance between HEAD and FOOD */
+        return Math.abs(x - generator.getFoodX()) + Math.abs(y - generator.getFoodY());
     }
 
+    /** return number of neighbors of point in grid that are invalid (snake or edge of grid) */
     private int badNeighborCount(int x, int y) {
         int badCount = 0;
         for (char dir: GridGenerator.DIRECTIONS) {
-            Point next = GridGenerator.getNextPoint(x, y, dir);
+            Point next = getNextPoint(x, y, dir);
             if (!generator.isValid(next.x, next.y)) {
                 badCount += 1;
             }
@@ -237,253 +127,55 @@ public class AutonomousPlayer {
         return badCount;
     }
 
-    private boolean itsATrap(int x, int y) {
-        int xDiff = x - generator.getHeadX();
-        int yDiff = y - generator.getHeadY();
-        if (Math.abs(yDiff) >= Math.abs(xDiff)) {
-            if (yDiff > 0 && generator.isLoopAbove()) {
-                return true;
-            }
-            if (yDiff < 0 && generator.isLoopBelow()) {
-                return true;
-            }
-        }
-        if (Math.abs(yDiff) <= Math.abs(xDiff)) {
-            if (xDiff > 0 && generator.isLoopRight()) {
-                return true;
-            }
-            if (xDiff < 0 && generator.isLoopLeft()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /** simple update method + helper*/
-    public void stupidUpdateDirection() {
-        char currDir = generator.getDirection();
-        int hx = generator.getHeadX();
-        int hy = generator.getHeadY();
-        int isAbove = hy - generator.getFoodY();
-        int isRightOf = hx - generator.getFoodX();
-        if (currDir == 'U' || currDir == 'D') {
-            if (isRightOf > 0) {
-                if (generator.isValid(hx - 1, hy)) {
-                    generator.updateDirection('L');
-                } else {
-                    if (generator.isValid(hx - 1, hy) && generator.isValid(hx + 1, hy)) {
-                        if (turnRelativeLeft()) {
-                            if (currDir == 'U') {
-                                generator.updateDirection('R');
-                            } else {
-                                generator.updateDirection('L');
-                            }
-                        } else {
-                            if (currDir == 'U') {
-                                generator.updateDirection('L');
-                            } else {
-                                generator.updateDirection('R');
-                            }
-                        }
-                    } else if (generator.isValid(hx - 1, hy)) {
-                        generator.updateDirection('L');
-                    } else if (generator.isValid(hx + 1, hy)) {
-                        generator.updateDirection('R');
-                    }
-                }
-            } else if (isRightOf < 0) {
-                if (generator.isValid(hx + 1, hy)) {
-                    generator.updateDirection('R');
-                } else {
-                    if (generator.isValid(hx - 1, hy) && generator.isValid(hx + 1, hy)) {
-                        if (turnRelativeLeft()) {
-                            if (currDir == 'U') {
-                                generator.updateDirection('R');
-                            } else {
-                                generator.updateDirection('L');
-                            }
-                        } else {
-                            if (currDir == 'U') {
-                                generator.updateDirection('L');
-                            } else {
-                                generator.updateDirection('R');
-                            }
-                        }
-                    } else if (generator.isValid(hx - 1, hy)) {
-                        generator.updateDirection('L');
-                    } else if (generator.isValid(hx + 1, hy)) {
-                        generator.updateDirection('R');
-                    }
-                }
-            } else {
-                if ((currDir == 'U') && (isAbove > 0 || !generator.isValid(hx, hy + 1)) ||
-                        (currDir == 'D') && (isAbove < 0 || !generator.isValid(hx, hy - 1))) {
-                    if (generator.isValid(hx - 1, hy) && generator.isValid(hx + 1, hy)) {
-                        if (turnRelativeLeft()) {
-                            if (currDir == 'U') {
-                                generator.updateDirection('R');
-                            } else {
-                                generator.updateDirection('L');
-                            }
-                        } else {
-                            if (currDir == 'U') {
-                                generator.updateDirection('L');
-                            } else {
-                                generator.updateDirection('R');
-                            }
-                        }
-                    } else if (generator.isValid(hx - 1, hy)) {
-                        generator.updateDirection('L');
-                    } else if (generator.isValid(hx + 1, hy)) {
-                        generator.updateDirection('R');
-                    }
-                }
-            }
-        } else {
-            if (isAbove > 0) {
-                if (generator.isValid(hx, hy - 1)) {
-                    generator.updateDirection('D');
-                } else {
-                    if (generator.isValid(hx, hy + 1) && generator.isValid(hx, hy - 1)) {
-                        if (turnRelativeLeft()) {
-                            if (currDir == 'R') {
-                                generator.updateDirection('U');
-                            } else {
-                                generator.updateDirection('D');
-                            }
-                        } else {
-                            if (currDir == 'R') {
-                                generator.updateDirection('D');
-                            } else {
-                                generator.updateDirection('U');
-                            }
-                        }
-                    } else if (generator.isValid(hx, hy + 1)) {
-                        generator.updateDirection('U');
-                    } else if (generator.isValid(hx, hy - 1)) {
-                        generator.updateDirection('D');
-                    }
-                }
-            } else if (isAbove < 0) {
-                if (generator.isValid(hx, hy + 1)) {
-                    generator.updateDirection('U');
-                } else {
-                    if (generator.isValid(hx, hy + 1) && generator.isValid(hx, hy - 1)) {
-                        if (turnRelativeLeft()) {
-                            if (currDir == 'R') {
-                                generator.updateDirection('U');
-                            } else {
-                                generator.updateDirection('D');
-                            }
-                        } else {
-                            if (currDir == 'R') {
-                                generator.updateDirection('D');
-                            } else {
-                                generator.updateDirection('U');
-                            }
-                        }
-                    } else if (generator.isValid(hx, hy + 1)) {
-                        generator.updateDirection('U');
-                    } else if (generator.isValid(hx, hy - 1)) {
-                        generator.updateDirection('D');
-                    }
-                }
-            } else {
-                if ((currDir == 'R') && (isRightOf > 0 || !generator.isValid(hx + 1, hy)) ||
-                        (currDir == 'L') && (isRightOf < 0 || !generator.isValid(hx - 1, hy))) {
-                    if (generator.isValid(hx, hy + 1) && generator.isValid(hx, hy - 1)) {
-                        if (turnRelativeLeft()) {
-                            if (currDir == 'R') {
-                                generator.updateDirection('U');
-                            } else {
-                                generator.updateDirection('D');
-                            }
-                        } else {
-                            if (currDir == 'L') {
-                                generator.updateDirection('D');
-                            } else {
-                                generator.updateDirection('U');
-                            }
-                        }
-                    } else if (generator.isValid(hx, hy + 1)) {
-                        generator.updateDirection('U');
-                    } else if (generator.isValid(hx, hy - 1)) {
-                        generator.updateDirection('D');
-                    }
-                }
-            }
-        }
-    }
-    private boolean turnRelativeLeft() {
-        int midX;
-        int midY;
-        Point[] orderedClockwise;
-        switch (generator.getDirection()) {
-            case 'U':
-                midX = generator.getHeadX();
-                midY = generator.getHeadY() + 1;
-                orderedClockwise = new Point[]{
-                        new Point(midX - 1, midY - 1),
-                        new Point(midX - 1, midY),
-                        new Point(midX - 1, midY + 1),
-                        new Point(midX, midY + 1),
-                        new Point(midX + 1, midY + 1),
-                        new Point(midX + 1, midY),
-                        new Point(midX + 1, midY - 1)
-                };
-                break;
-            case 'D':
-                midX = generator.getHeadX();
-                midY = generator.getHeadY() - 1;
-                orderedClockwise = new Point[]{
-                        new Point(midX + 1, midY + 1),
-                        new Point(midX + 1, midY),
-                        new Point(midX + 1, midY - 1),
-                        new Point(midX, midY + 1),
-                        new Point(midX - 1, midY - 1),
-                        new Point(midX - 1, midY),
-                        new Point(midX - 1, midY + 1),
-                };
-                break;
-            case 'R':
-                midX = generator.getHeadX() + 1;
-                midY = generator.getHeadY();
-                orderedClockwise = new Point[]{
-                        new Point(midX - 1, midY + 1),
-                        new Point(midX, midY + 1),
-                        new Point(midX + 1, midY + 1),
-                        new Point(midX + 1, midY),
-                        new Point(midX + 1, midY - 1),
-                        new Point(midX, midY - 1),
-                        new Point(midX - 1, midY - 1),
-                };
-                break;
-            default:
-                midX = generator.getHeadX() - 1;
-                midY = generator.getHeadY();
-                orderedClockwise = new Point[]{
-                        new Point(midX + 1, midY - 1),
-                        new Point(midX, midY - 1),
-                        new Point(midX - 1, midY - 1),
-                        new Point(midX - 1, midY),
-                        new Point(midX - 1, midY + 1),
-                        new Point(midX, midY + 1),
-                        new Point(midX + 1, midY + 1),
-                };
-                break;
+    /** return true if the polygon formed by the snake segment from HEAD -> CINCH -> HEAD is
+     *  oriented clockwise
+     *
+     *  uses Polygon Orientation algorithm: https://en.wikipedia.org/wiki/Curve_orientation
+     *  to determine if the polygon formed by the segment of the snake from HEAD -> CINCH is oriented clockwise or counter-clockwise
+     *  Example: (H = HEAD, C = CINCH, S = snake, . = empty space)
+     *      . . . . . . . . . .
+     *      S S S S C S S S S S
+     *      S . . . H . . . . .
+     *      S . . . S . . . . .
+     *      S S S S S . . . . .
+     *
+     *  The segment from H -> C is clockwise (return true)
+     */
+    public boolean loopIsClockwise(Point cinch) {
+        /* get the index of CINCH */
+        int cinchInd = generator.getSnakeIndexOfPoint(cinch);
+        if (cinchInd < 0) {
+            return false;
         }
 
-        Point firstLeftmost = null;
-        for (Point p: orderedClockwise) {
-            if (generator.snakeHasPoint(p)) {
-                firstLeftmost = p;
-                break;
+        /* return the leftmost-bottommost point in the segment from HEAD -> CINCH */
+        int minXPointX = generator.getHeadX();
+        int minXPointY = generator.getHeadY();
+        int minXInd = 0;
+        for (int i = 0; i <= cinchInd; i += 1) {
+            Point curr = generator.getSnakePoint(i);
+            if (curr.x < minXPointX || (curr.x == minXPointX && curr.y < minXPointY)) {
+                minXPointX = curr.x;
+                minXPointY = curr.y;
+                minXInd = i;
             }
         }
 
-        if (firstLeftmost == null) {
-            return true;
+        /* get the points immediately before and after the leftmost-bottommost point */
+        int beforeInd = minXInd - 1;
+        int afterInd = minXInd + 1;
+        if (beforeInd < 0) {
+            beforeInd = cinchInd;
         }
-        return generator.getSnakeIndexOfPoint(firstLeftmost) - generator.getSnakeIndexOfPoint(new Point(midX, midY)) > 0;
+        if (afterInd > cinchInd) {
+            afterInd = 0;
+        }
+        Point beforeXPoint = generator.getSnakePoint(beforeInd);
+        Point afterXPoint = generator.getSnakePoint(afterInd);
+
+        /* return true if the "determinant" (see algorithm) is less than 0 */
+        int det = (minXPointX - beforeXPoint.x) * (afterXPoint.y - beforeXPoint.y) -
+                (afterXPoint.x - beforeXPoint.x) * (minXPointY - beforeXPoint.y);
+        return det < 0;
     }
 }

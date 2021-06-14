@@ -1,21 +1,26 @@
-package com.github.vakumar1.SnakeGame;
+package com.github.vakumar1.snakegame;
 
 import java.awt.Point;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
 public class GridGenerator {
+    /** The GridGenerator Class creates a grid to store a game and methods to update the game parameters */
+
+    /* Grid dimensions and "buffer zone" (in which no food will be created) */
     public final static int GRID_WIDTH = 80;
     public final static int GRID_HEIGHT = 40;
     public final static int BUFFER = 5;
 
-    public static final int NOTHING_POINT = 0;
-    public static final int SNAKE_POINT = 1;
-    public static final int FOOD_POINT = 2;
+    /* integer representations of blank space, snake, and food points in the grid */
+    public final static  int NOTHING_POINT = 0;
+    public final static int SNAKE_POINT = 1;
+    public final static int FOOD_POINT = 2;
 
     public final static Random RANDOM = new Random();
-    public final static List<Character> DIRECTIONS = new LinkedList<Character>(){
+    public final static List<Character> DIRECTIONS = new ArrayList<Character>() {
         {
             add('U');
             add('D');
@@ -24,25 +29,23 @@ public class GridGenerator {
         }
     };
 
-    public int[][] grid;
-    private LinkedList<Point> snakeList;
+    /* grid stores the integer representations of each point in the game */
+    private int[][] grid;
+
+    /* head, tail, and food point to their respective points in the grid
+    * snakeList stores the Point representations of each point in the snake */
     private Point head;
     private Point tail;
     private Point food;
+    private LinkedList<Point> snakeList;
 
-    private int cinch;
-    private int minCinchIndex;
-    private double cinchDivisor;
-
-    private boolean loopIsAbove;
-    private boolean loopIsBelow;
-    private boolean loopIsRight;
-    private boolean loopIsLeft;
-
+    /* direction stores the current direction of the snake's movement */
     private char direction;
+
+    /* score stores the current player's score (length of the snake - 1) */
     private int score;
 
-    public GridGenerator(int minCinchIndex, double cinchDivisor) {
+    public GridGenerator() {
         grid = new int[GRID_WIDTH][GRID_HEIGHT];
         for (int x = 0; x < GRID_WIDTH; x += 1) {
             for (int y = 0; y < GRID_HEIGHT; y += 1) {
@@ -50,23 +53,15 @@ public class GridGenerator {
             }
         }
 
-        snakeList = new LinkedList<>();
         head = new Point();
-        snakeList.add(head);
         setHeadX(RANDOM.nextInt(GRID_WIDTH - 2 * BUFFER) + BUFFER);
         setHeadY(RANDOM.nextInt(GRID_HEIGHT - 2 * BUFFER) + BUFFER);
         tail = head;
         food = new Point();
         generateNewFood();
 
-        cinch = 0;
-        this.minCinchIndex = minCinchIndex;
-        this.cinchDivisor = cinchDivisor;
-
-        loopIsAbove = false;
-        loopIsBelow = false;
-        loopIsRight = false;
-        loopIsLeft = false;
+        snakeList = new LinkedList<>();
+        snakeList.add(head);
 
         grid[getHeadX()][getHeadY()] = SNAKE_POINT;
         grid[getFoodX()][getFoodY()] = FOOD_POINT;
@@ -76,6 +71,7 @@ public class GridGenerator {
     }
 
     /** public access methods */
+
     public int getGridCell(int x, int y) {
         return grid[x][y];
     }
@@ -104,19 +100,13 @@ public class GridGenerator {
 
     public int getFoodY() { return food.y; }
 
-    public boolean isLoopAbove() { return loopIsAbove; }
-
-    public boolean isLoopBelow() { return loopIsBelow; }
-
-    public boolean isLoopRight() { return loopIsRight; }
-
-    public boolean isLoopLeft() { return loopIsLeft; }
-
     public int getScore() { return score; }
 
     public char getDirection() { return direction; }
 
     /** state update methods */
+
+    /** changes direction if NEW_DIRECTION is valid */
     public void updateDirection(char newDirection) {
         if (!DIRECTIONS.contains(newDirection)) {
             return;
@@ -127,7 +117,11 @@ public class GridGenerator {
         direction = newDirection;
     }
 
+    /** returns false if the game is over after updating the snake's state with the current direction */
     public boolean updateSnake() {
+        if (!DIRECTIONS.contains(direction)) {
+            return true;
+        }
         Point nextHead = new Point(head);
         switch (direction) {
             case 'U':
@@ -143,14 +137,13 @@ public class GridGenerator {
                 nextHead.x -= 1;
                 break;
         }
-
-        if (nextHead.equals(head)) {
-            return true;
-        }
         if (isValid(nextHead.x, nextHead.y)) {
+            /* add head to the front of snake */
             head = nextHead;
             snakeList.addFirst(head);
             grid[getHeadX()][getHeadY()] = SNAKE_POINT;
+
+            /* update the tail and food */
             if (!head.equals(food)) {
                 tail = snakeList.removeLast();
                 grid[getTailX()][getTailY()] = NOTHING_POINT;
@@ -158,14 +151,14 @@ public class GridGenerator {
                 score += 1;
                 generateNewFood();
             }
-            setCinch();
-            setLoopLocation();
             return true;
         }
         return false;
     }
 
     /** public helper methods */
+
+    /** returns true if the point is on the grid and is not part of the snake */
     public boolean isValid(int x, int y) {
         if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) {
             return false;
@@ -173,6 +166,7 @@ public class GridGenerator {
         return grid[x][y] != SNAKE_POINT;
     }
 
+    /** return the "opposite" direction of DIR */
     public static char getOppositeDirection(char dir) {
         switch (dir) {
             case 'U':
@@ -188,6 +182,8 @@ public class GridGenerator {
         }
     }
 
+    /** return the point that will result from moving in DIR from
+     * the point given by CURR_X and CURR_Y */
     public static Point getNextPoint(int currX, int currY, char dir) {
         switch (dir) {
             case 'U':
@@ -203,22 +199,7 @@ public class GridGenerator {
         }
     }
 
-    public static char getNextDirection(int currX, int currY, int nextX, int nextY) {
-        int xDiff = nextX - currX;
-        int yDiff = nextY - currY;
-        if (xDiff == 0 && yDiff == 1) {
-            return 'U';
-        } else if (xDiff == 0 && yDiff == -1) {
-            return 'D';
-        } else if (xDiff == 1 && yDiff == 0) {
-            return 'R';
-        } else if (xDiff == -1 && yDiff == 0) {
-            return 'L';
-        } else {
-            return 'N';
-        }
-    }
-
+    /** return the "clockwise" direction of DIR */
     public static char rotateClockwiseDirection(char dir) {
         switch (dir) {
             case 'U':
@@ -234,6 +215,7 @@ public class GridGenerator {
         }
     }
 
+    /** return the "counter-clockwise" direction of DIR */
     public static char rotateCounterclockwiseDirection(char dir) {
         switch (dir) {
             case 'U':
@@ -250,6 +232,10 @@ public class GridGenerator {
     }
 
     /** private helper methods */
+
+    /** create a food particle in the grid that is not in the buffer zone
+     *  and is not a snake
+     *  !!! assumes that a valid point exists (otherwise will loop forever) */
     private void generateNewFood() {
         food.x = RANDOM.nextInt(GRID_WIDTH - 2 * BUFFER) + BUFFER;
         food.y = RANDOM.nextInt(GRID_HEIGHT - 2 * BUFFER) + BUFFER;
@@ -258,75 +244,6 @@ public class GridGenerator {
             grid[food.x][food.y] = FOOD_POINT;
         } else {
             generateNewFood();
-        }
-    }
-
-    private void setCinch() {
-        if (snakeList.size() == 1) {
-            return;
-        }
-        int minInd = 0;
-        double minDistSqrd = 99999;
-        for (int i = minCinchIndex; i < snakeList.size(); i += 1) {
-            Point curr = snakeList.get(i);
-            double pointDistSqrd = Math.pow(getHeadX() - curr.x, 2) + Math.pow(getHeadY() - curr.y, 2);
-            if (pointDistSqrd <= minDistSqrd) {
-                minInd = i;
-                minDistSqrd = pointDistSqrd;
-            }
-        }
-
-        double maxNormalDist = minInd / cinchDivisor;
-        if (minDistSqrd < maxNormalDist) {
-            cinch = minInd;
-        } else {
-            cinch = 0;
-        }
-    }
-
-    private void setLoopLocation() {
-        if (cinch < minCinchIndex) {
-            loopIsAbove = false;
-            loopIsBelow = false;
-            loopIsRight = false;
-            loopIsLeft = false;
-        } else {
-            Point minXPoint = head;
-            int minXInd = 0;
-            for (int i = 0; i <= cinch; i += 1) {
-                Point curr = snakeList.get(i);
-                if (curr.x < minXPoint.x || (curr.x == minXPoint.x && curr.y < minXPoint.y)) {
-                    minXPoint = curr;
-                    minXInd = i;
-                }
-            }
-            int beforeInd = minXInd - 1;
-            int afterInd = minXInd + 1;
-            if (beforeInd < 0) {
-                beforeInd = cinch;
-            }
-            if (afterInd > cinch) {
-                afterInd = 0;
-            }
-            Point beforeXPoint = snakeList.get(beforeInd);
-            Point afterXPoint = snakeList.get(afterInd);
-            int det = (minXPoint.x - beforeXPoint.x) * (afterXPoint.y - beforeXPoint.y) -
-                    (afterXPoint.x - beforeXPoint.x) * (minXPoint.y - beforeXPoint.y);
-
-            Point cinchPoint = snakeList.get(cinch);
-            int xDiff = cinchPoint.x - getHeadX();
-            int yDiff = cinchPoint.y - getHeadY();
-            if (det < 0) {
-                loopIsAbove = xDiff > 0;
-                loopIsBelow = xDiff < 0;
-                loopIsRight = yDiff < 0;
-                loopIsLeft = yDiff > 0;
-            } else if (det > 0) {
-                loopIsAbove = xDiff < 0;
-                loopIsBelow = xDiff > 0;
-                loopIsRight = yDiff > 0;
-                loopIsLeft = yDiff < 0;
-            }
         }
     }
 }

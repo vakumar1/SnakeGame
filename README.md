@@ -1,6 +1,6 @@
 # SnakeGame
 Snake Game implemented with LibGDX. 
-* Play Desktop version of the game: download the SnakeGame.jar file
+* Play Desktop version of the game: download the SnakeGameDesktop.jar file
     * 'P': play the game
         * Arrow Keys: move snake
     * 'W': watch autonomous player
